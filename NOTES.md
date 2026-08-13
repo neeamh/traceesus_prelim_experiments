@@ -2,6 +2,11 @@
 
 This file records behavior found in the four legacy scripts before modularization. It is not a change request. Numerical identity takes priority: the behaviors below must remain unchanged for the locked-output refactor, even when they are awkward or defective. Any scientific or numerical correction requires a separately versioned experiment and new outputs.
 
+> **Archive status (2026-08-13):** supervised-comparison entries below are historical provenance,
+> not active package behavior. The executable inventory now contains three experiments. Archived
+> source is under `archive/supervised/`; cited supervised outputs remain under
+> `outputs_locked/outputs_associative_vs_scm/`.
+
 Terminology used below:
 
 - **Scientific boundary**: a limitation or estimand distinction that is intentional and must remain explicit.
@@ -10,7 +15,7 @@ Terminology used below:
 
 ## Scientific boundaries that must survive the refactor
 
-### Model comparison is supervised classification
+### ARCHIVED — Model comparison is supervised classification
 
 `r21_associative_vs_scm.py::run_comparison()` creates `atrial_training_label` from `training["mechanism"]` and passes it to both logistic fits. It also passes `training["mechanism"]` to `fit_structural_causal_model()`. Therefore all three methods use true synthetic labels during training. This experiment is **not** latent endotype discovery. Preserve the statement currently saved as `metadata.json -> training_label_boundary`.
 
@@ -108,7 +113,7 @@ The frozen dataclasses do not call `validate()` at construction; validation occu
 
 Transport summaries and controls assume target index `0` is the no-shift baseline and the maximum index is the strongest shift. `TransportExperimentConfig.validate()` checks only that at least one target exists, not those semantics.
 
-## Defaults that are intentionally inconsistent across experiments
+## Historical defaults across the original four experiments
 
 | Property | Counterfactual preliminary | Supervised model comparison | Latent discovery | Transportability |
 |---|---:|---:|---:|---:|
@@ -123,7 +128,7 @@ These differences change the scientific estimand. Shared config classes must not
 ## RNG and order-of-consumption quirks that are load-bearing
 
 - Preliminary main repeats use `SeedSequence(seed) -> level -> repeat -> (data, ties)`, then spawn three separate tie generators in method order. Its null uses `seed + 1_000_003`.
-- Supervised comparison uses `SeedSequence(seed) -> level -> repeat -> (train, test, ties)` and three method-specific tie generators.
+- Archived supervised comparison used `SeedSequence(seed) -> level -> repeat -> (train, test, ties)` and three method-specific tie generators.
 - Latent recovery derives a uint64 seed per level/repeat, then `_run_one_repeat()` spawns eight streams in the fixed order simulation, test, three primary fits, and three retry fits. Its K=1 null uses `master_seed + 91_337`; its example uses `master_seed + 808_080`.
 - Transport uses `master_seed + 404_404`, then 12 per-repeat streams. With the default three sources, streams `0:3` simulate sources, `3:9` fit/retry the three mixtures, and generated states from streams `9` and `10` seed all paired target scenarios. Stream `11` is unused.
 
@@ -131,7 +136,7 @@ Do not consolidate these offsets, replace `SeedSequence`, share generators, lazi
 
 ## Output-contract inconsistencies to preserve
 
-- Supervised comparison writes `outputs_associative_vs_scm/{raw_metrics.csv, fit_diagnostics.csv, summary.csv, paired_contrasts.csv, metadata.json, figure_P1_associative_vs_scm.*}` and no legacy `validation_checks.json`.
+- Archived supervised comparison wrote `outputs_associative_vs_scm/{raw_metrics.csv, fit_diagnostics.csv, summary.csv, paired_contrasts.csv, metadata.json, figure_P1_associative_vs_scm.*}` and no legacy `validation_checks.json`; immutable copies remain under `outputs_locked/`.
 - Latent discovery writes `outputs_latent_endotyping/` with `metadata.json`, `validation_checks.json`, the recovery/diagnostic/null CSV names, `example_patient.json`, and P1/P2/S1 figures.
 - Transport main writes `metadata.json` and `validation_checks.json`; `ablations/` writes validation and negative-control JSON but no metadata; `exact_no_shift_control/` uses generic `raw_metrics.csv`, `summary.csv`, and `paired_contrasts.csv` names rather than the main transport prefixes.
 - Preliminary writes the generic `outputs/` directory, calls its metadata `run_metadata.json`, and has no legacy `validation_checks.json`.
@@ -142,7 +147,7 @@ Compatibility code must reproduce these legacy names exactly. New `manifest.json
 ## Dead or currently ineffective source elements
 
 - `traceesus/models/clinical_rule.py` is intentionally a reserved module. None
-  of the four legacy experiments implements a clinical decision rule, so the
+  of the three retained experiments implements a clinical decision rule, so the
   refactor does not invent or relabel one merely to populate the target tree.
 
 - `r21_preliminary_experiment.py::posterior_integrated_counterfactual_scores()` assigns `factual_gate = effects[branch]` but never reads it.
@@ -167,11 +172,11 @@ Latent discovery and transport now delegate to one raw-array `anchor_order()` he
 
 The `endotype_discovery` facade executes its ordered `Model` registry through `run_model_registry()`. This is the supported append-only extension point for the planned source-of-gain ablation: existing initial-fit and retry streams remain fixed, and new variants receive later streams.
 
-The `model_comparison` and `transportability` facades also expose model tuples, but those are compatibility/validation registries. Their frozen repeat kernels still dispatch the proposal-locked methods directly. Appending a class to either tuple does not add a row to its experiment. Replacing those kernels with generic registry dispatch could be valuable, but it requires a separate locked-output proof because fit retries, target recalibration, and tie streams are interleaved differently. The current package documents this honestly rather than presenting a facade tuple as functionality it does not provide.
+The retained `transportability` facade also exposes a model tuple, but it is a compatibility/validation registry. Its frozen repeat kernel still dispatches the proposal-locked methods directly. Appending a class to that tuple does not add a row to the experiment. Replacing the kernel with generic registry dispatch would require a separate locked-output proof because fit retries, target recalibration, and tie streams are interleaved differently.
 
 ### The two-mechanism simulators are not numerically interchangeable
 
-The preliminary/model-comparison generator and the latent-discovery generator share a scientific outline but not an exact implementation contract. The former uses a renal-dependent logistic mechanism prior, ordinary integer arrays, preliminary-specific effects `(1.20, 0.80, 0.00)`, and `rng.normal(size=...) * noise_sd`. The latter uses two configured stratum probabilities, `int8` labels/covariates, effects `(1.25, 1.00, 0.00)`, and `rng.normal(0.0, noise_sd, size=...)`. Even when configured to superficially similar values, unifying these expressions can alter array dtypes or floating-point results. They therefore remain separate exact kernels behind a common `Simulator`/`SimulatedData` contract.
+The preliminary counterfactual generator and the latent-discovery generator share a scientific outline but not an exact implementation contract. The former uses a renal-dependent logistic mechanism prior, ordinary integer arrays, preliminary-specific effects `(1.20, 0.80, 0.00)`, and `rng.normal(size=...) * noise_sd`. The latter uses two configured stratum probabilities, `int8` labels/covariates, effects `(1.25, 1.00, 0.00)`, and `rng.normal(0.0, noise_sd, size=...)`. Even when configured to superficially similar values, unifying these expressions can alter array dtypes or floating-point results. They therefore remain separate exact kernels behind a common `Simulator`/`SimulatedData` contract.
 
 The two K=1 null generators diverge more sharply: latent discovery retains renal distortion while comparing three model families; the preliminary null subtracts the known renal path and applies a convergence/minimum-weight gate in addition to BIC. Treating them as one configurable algorithm would conceal different estimands.
 

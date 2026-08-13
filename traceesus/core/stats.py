@@ -34,10 +34,10 @@ def bounded_rate_monte_carlo_summary(
 ) -> dict[str, float | int]:
     """Summarize a repeated rate with the legacy clipped t interval.
 
-    The supervised and known-SCM experiments use different public column names
-    from latent discovery, but historically share this exact scalar reduction.
-    Keeping the reduction here prevents an ostensibly cosmetic rewrite from
-    changing quantile, degrees-of-freedom, or clipping semantics.
+    The known-SCM experiment uses different public column names from latent
+    discovery but shares this exact scalar reduction. Keeping the reduction
+    here prevents an ostensibly cosmetic rewrite from changing quantile,
+    degrees-of-freedom, or clipping semantics.
     """
 
     values = np.asarray(values, dtype=float)

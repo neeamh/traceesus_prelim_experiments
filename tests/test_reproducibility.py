@@ -1,4 +1,4 @@
-"""Proposal-lock regression tests for every TRACE-ESUS experiment facade.
+"""Proposal-lock regression tests for the retained TRACE-ESUS facades.
 
 The expected hashes in ``fixtures/reproducibility_expected.json`` were created
 once from package runs that had already been checked against their legacy
@@ -31,7 +31,6 @@ import pytest
 
 from configs.counterfactual import CONFIG as COUNTERFACTUAL_CONFIG
 from configs.endotype_discovery import CONFIG as ENDOTYPE_CONFIG
-from configs.model_comparison import CONFIG as MODEL_COMPARISON_CONFIG
 from configs.transportability import CONFIG as TRANSPORT_CONFIG
 from traceesus.core.io import sha256_file
 from traceesus.core.model import Model, assert_truth_free_fit_interfaces
@@ -44,7 +43,6 @@ from traceesus.core.runner import (
 from traceesus.core.simulator import Cohort
 from traceesus.experiments.counterfactual import CounterfactualExperiment
 from traceesus.experiments.endotype_discovery import EndotypeDiscoveryExperiment
-from traceesus.experiments.model_comparison import ModelComparisonExperiment
 from traceesus.experiments.transportability import TransportabilityExperiment
 from traceesus.models import (
     AdjustedLatentClassModel,
@@ -99,14 +97,10 @@ def _manifest_inventory(output_directory: Path) -> dict[str, str]:
 def reproducibility_runs(
     tmp_path_factory: pytest.TempPathFactory,
 ) -> dict[str, dict[str, Any]]:
-    """Execute every facade once with two repeats and all other defaults intact."""
+    """Execute every retained facade once with two repeats and other defaults intact."""
 
     root = tmp_path_factory.mktemp("trace-esus-reproducibility")
     specifications = {
-        "model_comparison": (
-            replace(MODEL_COMPARISON_CONFIG, repeats_per_level=2),
-            ModelComparisonExperiment,
-        ),
         "endotype_discovery": (
             replace(
                 ENDOTYPE_CONFIG,
@@ -173,6 +167,9 @@ def test_manifest_inventory_and_checksums_are_complete(
     # The manifest is JSON, so immutable dataclass tuples are represented as
     # arrays after round-tripping.  Compare the same serialized data model.
     serialized_config = json.loads(json.dumps(asdict(run["config"])))
+    if experiment_name == "endotype_discovery":
+        serialized_config["simulation"].pop("heart_failure_prevalence")
+        serialized_config["simulation"].pop("heart_failure_effect_levels_sd")
     assert manifest["config"] == serialized_config
     assert np.isfinite(manifest["wall_clock_runtime_seconds"])
     assert manifest["wall_clock_runtime_seconds"] >= 0.0
@@ -243,18 +240,3 @@ def test_unsupervised_fit_boundary_excludes_truth() -> None:
     assert_truth_free_fit_interfaces(models)
     for model in models:
         assert forbidden.isdisjoint(inspect.signature(model.fit).parameters)
-
-
-def test_supervised_comparison_metadata_states_scientific_boundary(
-    reproducibility_runs: dict[str, dict[str, Any]],
-) -> None:
-    """Prevent the supervised comparison from being mislabeled as discovery."""
-
-    metadata_path = (
-        reproducibility_runs["model_comparison"]["directory"] / "metadata.json"
-    )
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    assert metadata["training_label_boundary"] == (
-        "All three models use known synthetic mechanism labels during training. "
-        "This is supervised classification, not unsupervised endotype discovery."
-    )

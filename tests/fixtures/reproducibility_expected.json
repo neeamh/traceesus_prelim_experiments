@@ -2,17 +2,6 @@
   "schema_version": 1,
   "fixture_policy": "Fixed SHA-256 values from two-repeat package runs already checked against the legacy scripts; never auto-regenerate in tests.",
   "experiments": {
-    "model_comparison": {
-      "output_directory": "outputs_associative_vs_scm",
-      "master_seed": 20260729,
-      "legacy_file_sha256": {
-        "fit_diagnostics.csv": "84dd8271eb5bab7919029c7f0bc98537e4a8b5385e4d7b0527e3f24ec0e32c99",
-        "metadata.json": "92539f3c530892efc1b5f4ac4bd4d6c9408e5b1e024ed3f82ce7f58f6050f4d1",
-        "paired_contrasts.csv": "6c58e6845773fb990cc69c9e4214b21a2123c8ae75c9bbb6d9a918b9c0cc4b92",
-        "raw_metrics.csv": "37445084a0eb25c39a4b82840636a7353209a6a9da556be65d9d56bec55e5d24",
-        "summary.csv": "38122b1656328520fa16587d61f4fc2ee457ed42577425fb9c2b9550a00025c2"
-      }
-    },
     "endotype_discovery": {
       "output_directory": "outputs_latent_endotyping",
       "master_seed": 20260728,

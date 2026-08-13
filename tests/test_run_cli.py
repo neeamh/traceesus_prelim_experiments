@@ -12,7 +12,6 @@ import pytest
 import run
 from configs.counterfactual import CONFIG as COUNTERFACTUAL_CONFIG
 from configs.endotype_discovery import CONFIG as ENDOTYPE_CONFIG
-from configs.model_comparison import CONFIG as MODEL_COMPARISON_CONFIG
 from configs.transportability import CONFIG as TRANSPORT_CONFIG
 from traceesus.core.io import sha256_file, write_manifest
 
@@ -22,7 +21,6 @@ from traceesus.core.io import sha256_file, write_manifest
     (
         COUNTERFACTUAL_CONFIG,
         ENDOTYPE_CONFIG,
-        MODEL_COMPARISON_CONFIG,
         TRANSPORT_CONFIG,
     ),
 )
@@ -80,7 +78,7 @@ def test_figures_preserves_smoke_config_and_experiment_runtime(
     original_runtime = 12.5
     write_manifest(
         tmp_path,
-        experiment="model_comparison",
+        experiment="endotype_discovery",
         config=smoke,
         master_seed=smoke.seed,
         wall_clock_runtime_seconds=original_runtime,
@@ -91,9 +89,9 @@ def test_figures_preserves_smoke_config_and_experiment_runtime(
         assert workers is None
         return _FigureOnlyExperiment(_SmokeConfig(), output)
 
-    monkeypatch.setitem(run.FACTORIES, "model_comparison", factory)
+    monkeypatch.setitem(run.FACTORIES, "endotype_discovery", factory)
     status = run._figures(
-        argparse.Namespace(experiment="model_comparison", out=tmp_path)
+        argparse.Namespace(experiment="endotype_discovery", out=tmp_path)
     )
     assert status == 0
 
@@ -106,3 +104,11 @@ def test_figures_preserves_smoke_config_and_experiment_runtime(
     assert manifest["output_file_sha256"] == {
         "figure.png": sha256_file(tmp_path / "figure.png")
     }
+
+
+def test_cli_inventory_is_exactly_the_three_retained_experiments() -> None:
+    """Prevent archived or extension-only studies from re-entering the root CLI."""
+
+    expected = {"endotype_discovery", "transportability", "counterfactual"}
+    assert set(run.EXPERIMENTS) == expected
+    assert set(run.FACTORIES) == expected

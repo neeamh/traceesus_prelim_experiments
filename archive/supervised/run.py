@@ -30,6 +30,11 @@ from traceesus.core.verification import compare_output_trees
 
 
 EXPERIMENTS = {
+    "model_comparison": {
+        "config": "configs/model_comparison.py",
+        "output": "outputs_associative_vs_scm",
+        "description": "Supervised associative classifiers versus a supervised fitted SCM.",
+    },
     "endotype_discovery": {
         "config": "configs/endotype_discovery.py",
         "output": "outputs_latent_endotyping",
@@ -44,6 +49,14 @@ EXPERIMENTS = {
         "config": "configs/counterfactual.py",
         "output": "outputs",
         "description": "Known-SCM kidney-blind, posterior, and counterfactual query comparison.",
+    },
+    "redundancy_sweep": {
+        "config": "configs/endotype_discovery.py",
+        "output": "outputs_redundancy_sweep",
+        "description": (
+            "HF path on PTFV1 swept at fixed strong renal distortion; four "
+            "nuisance-profile subgroups. Own seed root; touches no locked output."
+        ),
     },
 }
 
@@ -60,6 +73,20 @@ def _endotype_factory(
     if workers is not None:
         config = replace(config, workers=workers)
     return EndotypeDiscoveryExperiment(config, output)
+
+
+def _model_comparison_factory(
+    *, repeats: int | None, workers: int | None, output: Path
+) -> Any:
+    from configs.model_comparison import CONFIG
+    from traceesus.experiments.model_comparison import ModelComparisonExperiment
+
+    if workers not in (None, 1):
+        raise ValueError(
+            "model_comparison has no legacy parallel-worker setting; use --workers 1."
+        )
+    config = replace(CONFIG, repeats_per_level=repeats) if repeats is not None else CONFIG
+    return ModelComparisonExperiment(config, output)
 
 
 def _transportability_factory(
@@ -96,10 +123,26 @@ def _counterfactual_factory(
     return CounterfactualExperiment(config, output)
 
 
+def _redundancy_sweep_factory(
+    *, repeats: int | None, workers: int | None, output: Path
+) -> Any:
+    from configs.endotype_discovery import CONFIG
+    from traceesus.experiments.endotype_discovery import RedundancySweepExperiment
+
+    config = CONFIG
+    if repeats is not None:
+        config = replace(config, repeats_per_level=repeats, null_repeats=repeats)
+    if workers is not None:
+        config = replace(config, workers=workers)
+    return RedundancySweepExperiment(config, output)
+
+
 FACTORIES: dict[str, Callable[..., Any]] = {
+    "model_comparison": _model_comparison_factory,
     "endotype_discovery": _endotype_factory,
     "transportability": _transportability_factory,
     "counterfactual": _counterfactual_factory,
+    "redundancy_sweep": _redundancy_sweep_factory,
 }
 
 
@@ -160,7 +203,7 @@ def _output_for(name: str, override: Path | None, *, all_run: bool) -> Path:
 
 
 def _restore_config_like(template: Any, serialized: Any) -> Any:
-    """Rehydrate a manifest config without hard-coding experiment schemas.
+    """Rehydrate a manifest config without hard-coding four dataclass schemas.
 
     Figure-only regeneration must use the configuration that produced the
     tables, including smoke-run overrides.  The already-constructed default is
@@ -290,8 +333,8 @@ def _verify(arguments: argparse.Namespace) -> int:
         locked = arguments.against / relative
         candidate = arguments.candidate / relative
         if not locked.exists():
-            # Extensions added after the freeze have no locked baseline;
-            # verification covers cited experiment outputs only.
+            # Experiments added after the freeze (e.g. the redundancy sweep)
+            # have no locked baseline; verification covers cited outputs only.
             print(f"note: {name}: no locked baseline at {locked}; skipped.")
             continue
         report = compare_output_trees(

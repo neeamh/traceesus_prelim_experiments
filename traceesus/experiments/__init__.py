@@ -1,1 +1,1 @@
-"""Four TRACE-ESUS experiment implementations."""
+"""Three retained TRACE-ESUS experiments plus unsupervised extensions."""

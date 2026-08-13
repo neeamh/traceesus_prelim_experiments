@@ -45,9 +45,9 @@ def nested_seed_sequence_ledger(
 ) -> list[list[np.random.SeedSequence]]:
     """Spawn the exact level-then-repeat SeedSequence tree used by two studies.
 
-    These children must remain ``SeedSequence`` objects: the supervised and
-    known-SCM experiments spawn additional data/test/tie descendants from each
-    repeat.  Converting them through integers would define a different tree.
+    These children must remain ``SeedSequence`` objects: the known-SCM
+    experiment spawns additional data and tie descendants from each repeat.
+    Converting them through integers would define a different tree.
     """
 
     levels = np.random.SeedSequence(master_seed).spawn(level_count)

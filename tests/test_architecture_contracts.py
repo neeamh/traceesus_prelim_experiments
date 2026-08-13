@@ -16,10 +16,6 @@ from configs.endotype_discovery import (
     FittingConfig,
     SimulationConfig,
 )
-from configs.model_comparison import (
-    CONFIG as MODEL_COMPARISON_CONFIG,
-    ComparisonConfig,
-)
 from configs.transportability import (
     CONFIG as TRANSPORT_CONFIG,
     HospitalSpec,
@@ -28,7 +24,6 @@ from configs.transportability import (
 )
 from traceesus.experiments.counterfactual import kernel as counterfactual_kernel
 from traceesus.experiments.endotype_discovery import kernel as endotype_kernel
-from traceesus.experiments.model_comparison import kernel as comparison_kernel
 from traceesus.experiments.transportability import kernel as transport_kernel
 from traceesus.models.modular_causal_scm import (
     PooledAssociativeTransportModel,
@@ -45,7 +40,6 @@ from traceesus.queries.posterior import anchor_order
     (
         COUNTERFACTUAL_CONFIG,
         ENDOTYPE_CONFIG,
-        MODEL_COMPARISON_CONFIG,
         TRANSPORT_CONFIG,
     ),
 )
@@ -74,7 +68,6 @@ def test_config_classes_are_owned_by_the_visible_config_modules() -> None:
         SimulationConfig,
         FittingConfig,
         EndotypeExperimentConfig,
-        ComparisonConfig,
         HospitalSpec,
         TransportSimulationConfig,
         TransportExperimentConfig,
@@ -84,7 +77,6 @@ def test_config_classes_are_owned_by_the_visible_config_modules() -> None:
     # Kernels re-export the same class objects for legacy scripts and notebooks.
     assert counterfactual_kernel.ExperimentConfig is CounterfactualConfig
     assert endotype_kernel.ExperimentConfig is EndotypeExperimentConfig
-    assert comparison_kernel.ComparisonConfig is ComparisonConfig
     assert transport_kernel.TransportExperimentConfig is TransportExperimentConfig
 
 
@@ -100,11 +92,10 @@ def test_transport_adapter_exposes_a_precise_config_union() -> None:
         _fitting_config(object())  # type: ignore[arg-type]
 
 
-def test_plotting_surface_names_every_legacy_figure_family() -> None:
-    """Expose shared plotting discovery while retaining exact kernel functions."""
+def test_plotting_surface_names_every_retained_figure_family() -> None:
+    """Expose retained plotting adapters while preserving exact kernel functions."""
 
     assert panels.plot_counterfactual_primary is counterfactual_kernel.plot_primary_figure
-    assert panels.plot_model_comparison is comparison_kernel.plot_comparison
     assert panels.plot_endotype_recovery is endotype_kernel.plot_primary_figure
     assert panels.plot_endotype_controls is endotype_kernel.plot_control_figure
     assert panels.plot_endotype_example_patient is endotype_kernel.plot_example_patient

@@ -113,8 +113,15 @@ class EndotypeDiscoveryExperiment(Experiment):
             self.config,
             self.models,
         )
+        experiment_config = asdict(self.config)
+        # HF-grid controls are additive extension settings, not inputs to the
+        # proposal-locked discovery run.  Keep the legacy metadata byte shape
+        # exact while leaving those controls available to the extension.
+        simulation_config = experiment_config["simulation"]
+        simulation_config.pop("heart_failure_prevalence", None)
+        simulation_config.pop("heart_failure_effect_levels_sd", None)
         artifacts.metadata = {
-            "experiment_config": asdict(self.config),
+            "experiment_config": experiment_config,
             "model_parameter_counts_k2": {
                 kernel.ASSOCIATIVE_LCA: 12,
                 kernel.ASSOCIATIVE_ADJUSTED: 14,
@@ -188,7 +195,7 @@ class EndotypeDiscoveryExperiment(Experiment):
         artifacts.manifest = write_manifest(
             self.output_directory,
             experiment=self.name,
-            config=self.config,
+            config=artifacts.metadata["experiment_config"],
             master_seed=self.config.master_seed,
             wall_clock_runtime_seconds=self.wall_clock_runtime_seconds,
         )

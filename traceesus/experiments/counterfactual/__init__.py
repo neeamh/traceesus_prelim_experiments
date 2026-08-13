@@ -1,8 +1,8 @@
 """Known-SCM posterior and counterfactual query experiment.
 
-The causal specification is the prespecified data-generating model.  No SCM is
-fitted in this experiment; this boundary is distinct from both supervised model
-comparison and unlabeled endotype discovery.
+The causal specification is the prespecified data-generating model. No SCM is
+fitted in this experiment; this boundary is distinct from unlabeled endotype
+discovery.
 """
 
 from __future__ import annotations

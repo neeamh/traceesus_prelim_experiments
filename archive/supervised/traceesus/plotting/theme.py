@@ -20,11 +20,12 @@ PALETTE: dict[str, str] = {
 
 DEFAULT_FONT: str = "DejaVu Sans"
 
-# Exact inch dimensions used by the retained proposal-locked figure families.
+# Exact inch dimensions used by the eight proposal-locked figure families.
 # Separate keys are intentional: superficially similar two-panel plots differ
 # in width or height, and normalizing them would alter rendered artifacts.
 FIGURE_SIZES_INCHES: dict[str, tuple[float, float]] = {
     "counterfactual_primary": (11.2, 4.6),
+    "model_comparison_primary": (11.4, 4.7),
     "endotype_recovery": (12.2, 5.1),
     "endotype_controls": (12.2, 5.0),
     "endotype_example_patient": (8.8, 5.1),

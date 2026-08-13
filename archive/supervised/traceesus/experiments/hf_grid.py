@@ -1,17 +1,20 @@
-"""Renal x heart-failure grid for unsupervised endotype discovery.
+"""Renal x heart-failure grid for endotype discovery and model comparison.
 
-The runner produces the presentation dataset for five latent models per repeat.
+One runner produces both presentation datasets:
+
+- ``run_latent_grid``     — unsupervised discovery (5 models per repeat)
+- ``run_supervised_grid`` — supervised comparison (5 models per repeat)
 
 Every cell of the 4 x 4 grid uses paired cohorts and per-model fit streams, so
 differences between models are attributable to the model, never the draw.
-The runner always reports the four prespecified nuisance profiles
+Both runners always report the four prespecified nuisance profiles
 (uncomplicated / renal-only / heart-failure-only / redundant); false-atrial
 attribution within a profile is computed over its competing-mechanism patients
 by the shared metric function.
 
-The seed root is salted (+737_270) and therefore disjoint from every
-proposal-locked ledger: this grid can be rerun freely without touching a cited
-artifact.
+Seed roots are salted (+737_270 latent, +747_270 supervised) and therefore
+disjoint from every proposal-locked ledger: this grid can be rerun freely
+without touching a cited artifact.
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ from traceesus.core.model import Model
 from traceesus.core.runner import ordered_map, spawned_uint64_seeds
 from traceesus.experiments.endotype_discovery import kernel
 from traceesus.experiments.endotype_discovery import multi_nuisance as mn
+from traceesus.experiments.model_comparison import kernel as comparison_kernel
 from traceesus.models import AdjustedLatentClassModel, AssociativeLatentClassModel
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 
@@ -37,6 +41,13 @@ HF_LEVELS = (0.0, 0.5, 1.0, 1.5)
 SCATTER_RENAL_LEVELS = (0.0, 0.75, 1.5)
 
 BIOMARKER_COLUMNS = ("nt_probnp", "ptfv1", "competing_vascular")
+
+SUPERVISED_LOGISTIC_BIOMARKERS = "Logistic regression (biomarkers only)"
+SUPERVISED_LOGISTIC_RENAL = "Logistic regression (+ kidney status)"
+SUPERVISED_LOGISTIC_BOTH = "Logistic regression (+ kidney + heart failure)"
+SUPERVISED_SCM_TWO_PATH = "Supervised two-path SCM (posterior)"
+SUPERVISED_SCM_COUNTERFACTUAL = "Supervised two-path SCM (counterfactual query)"
+
 
 def _latent_models() -> tuple[Model, ...]:
     return (
@@ -147,6 +158,184 @@ def run_latent_grid(
         for repeat_index, seed in enumerate(seeds):
             tasks.append((repeat_index, seed, renal_sd, hf_sd, config))
     results = ordered_map(_run_latent_cell, tasks, workers)
+    return pd.DataFrame([row for rows in results for row in rows])
+
+
+# --------------------------------------------------------------------------
+# Supervised (model comparison) grid
+# --------------------------------------------------------------------------
+
+def _supervised_two_path_fit(
+    biomarkers: np.ndarray,
+    renal: np.ndarray,
+    heart_failure: np.ndarray,
+    mechanism: np.ndarray,
+    config: comparison_kernel.ComparisonConfig,
+) -> mn.MultiNuisanceLatentFit:
+    """Supervised structural fit expressed as a MultiNuisanceLatentFit.
+
+    Least-squares structural equations on the design
+    ``[atrial, competing, renal, heart_failure]`` — the direct two-nuisance
+    generalization of the locked supervised SCM.  Returning the shared fit
+    dataclass lets the supervised posterior and counterfactual queries reuse
+    the exact latent-side arithmetic, so the two experiments answer the query
+    question with one implementation.
+    """
+
+    design = np.column_stack(
+        (
+            (mechanism == kernel.Mechanism.ATRIAL).astype(float),
+            (mechanism == kernel.Mechanism.COMPETING).astype(float),
+            renal.astype(float),
+            heart_failure.astype(float),
+        )
+    )
+    coefficients, _, _, _ = np.linalg.lstsq(design, biomarkers, rcond=None)
+    residual = biomarkers - design @ coefficients
+    degrees_of_freedom = biomarkers.shape[0] - design.shape[1]
+    noise_sd = np.sqrt(np.sum(residual**2, axis=0) / degrees_of_freedom)
+    noise_sd = np.maximum(noise_sd, config.variance_floor)
+
+    smoothing = config.scm_prior_smoothing
+    class_probability_by_renal = np.zeros((2, 2), dtype=float)
+    for renal_value in (0, 1):
+        stratum = renal == renal_value
+        count = int(np.sum(stratum))
+        atrial = int(np.sum(stratum & (mechanism == kernel.Mechanism.ATRIAL)))
+        p_atrial = (atrial + smoothing) / (count + 2.0 * smoothing)
+        class_probability_by_renal[renal_value] = (p_atrial, 1.0 - p_atrial)
+
+    return mn.MultiNuisanceLatentFit(
+        class_probability_by_renal=class_probability_by_renal,
+        class_means_at_reference=coefficients[:2, :],
+        nuisance_effects=coefficients[2:, :],
+        nuisance_path_mask=np.ones((2, biomarkers.shape[1]), dtype=bool),
+        biomarker_variance=noise_sd**2,
+        log_likelihood=float("nan"),
+        converged=True,
+        iterations=1,
+        best_start=0,
+        effective_class_fraction=np.array([
+            float(np.mean(mechanism == kernel.Mechanism.ATRIAL)),
+            float(np.mean(mechanism == kernel.Mechanism.COMPETING)),
+        ]),
+        anchor_margin=float("nan"),
+    )
+
+
+def _run_supervised_cell(task) -> list[dict[str, object]]:
+    repeat_index, seed, renal_sd, hf_sd, sim_config, cmp_config, train_n, test_n = task
+    sequences = np.random.SeedSequence(seed).spawn(2)
+    training = kernel.simulate_two_mechanism_cohort(
+        np.random.default_rng(sequences[0]), train_n, renal_sd, sim_config,
+        heart_failure_effect_sd=hf_sd,
+    )
+    test = kernel.simulate_two_mechanism_cohort(
+        np.random.default_rng(sequences[1]), test_n, renal_sd, sim_config,
+        heart_failure_effect_sd=hf_sd,
+    )
+    atrial_label = (training.true_mechanism == kernel.Mechanism.ATRIAL).astype(float)
+    nuisances_test = np.column_stack(
+        (test.renal_dysfunction.astype(float), test.heart_failure.astype(float))
+    )
+
+    def logistic_posterior(train_features, test_features):
+        model = comparison_kernel.fit_logistic_regression(
+            train_features, atrial_label, cmp_config
+        )
+        p = comparison_kernel.logistic_atrial_probability(model, test_features)
+        return np.column_stack((p, 1.0 - p))
+
+    train_b, test_b = training.biomarkers, test.biomarkers
+    train_r = training.renal_dysfunction.astype(float)[:, None]
+    test_r = test.renal_dysfunction.astype(float)[:, None]
+    train_h = training.heart_failure.astype(float)[:, None]
+    test_h = test.heart_failure.astype(float)[:, None]
+
+    scm_fit = _supervised_two_path_fit(
+        train_b,
+        training.renal_dysfunction,
+        training.heart_failure,
+        training.true_mechanism,
+        cmp_config,
+    )
+    scm_posterior = mn.multi_nuisance_posterior(
+        scm_fit, test_b, test.renal_dysfunction, nuisances_test
+    )
+    scm_scores = mn.multi_nuisance_counterfactual_scores(
+        scm_fit, test_b, test.renal_dysfunction, nuisances_test
+    )
+    posteriors = {
+        SUPERVISED_LOGISTIC_BIOMARKERS: logistic_posterior(train_b, test_b),
+        SUPERVISED_LOGISTIC_RENAL: logistic_posterior(
+            np.hstack((train_b, train_r)), np.hstack((test_b, test_r))
+        ),
+        SUPERVISED_LOGISTIC_BOTH: logistic_posterior(
+            np.hstack((train_b, train_r, train_h)), np.hstack((test_b, test_r, test_h))
+        ),
+        SUPERVISED_SCM_TWO_PATH: scm_posterior,
+        SUPERVISED_SCM_COUNTERFACTUAL: mn._row_normalize(scm_scores["combined"]),
+    }
+
+    class _Observed:
+        """Minimal covariate view matching the metric function's interface."""
+
+        def covariate(self, name: str) -> np.ndarray:
+            if name == "renal_dysfunction":
+                return test.renal_dysfunction
+            if name == "heart_failure":
+                return test.heart_failure
+            raise KeyError(name)
+
+    observed = _Observed()
+    rows: list[dict[str, object]] = []
+    for method, posterior in posteriors.items():
+        row: dict[str, object] = {
+            "repeat": repeat_index,
+            "renal_effect_sd": renal_sd,
+            "heart_failure_effect_sd": hf_sd,
+            "method": method,
+        }
+        row.update(
+            _evaluate(posterior, test.true_mechanism, observed, 10)
+        )
+        rows.append(row)
+    return rows
+
+
+def run_supervised_grid(
+    sim_config,
+    cmp_config: comparison_kernel.ComparisonConfig,
+    *,
+    master_seed: int,
+    renal_levels: tuple[float, ...] = RENAL_LEVELS,
+    hf_levels: tuple[float, ...] = HF_LEVELS,
+    repeats: int = 100,
+    workers: int = 4,
+    training_patients: int = 3_000,
+    test_patients: int = 1_000,
+) -> pd.DataFrame:
+    """Supervised comparison across the full renal x heart-failure grid."""
+
+    tasks = []
+    root = np.random.SeedSequence(master_seed + 747_270)
+    cells = [(r, h) for r in renal_levels for h in hf_levels]
+    ledgers = [spawned_uint64_seeds(child, repeats) for child in root.spawn(len(cells))]
+    for (renal_sd, hf_sd), seeds in zip(cells, ledgers, strict=True):
+        for repeat_index, seed in enumerate(seeds):
+            tasks.append(
+                (
+                    repeat_index,
+                    seed,
+                    renal_sd,
+                    hf_sd,
+                    sim_config,
+                    cmp_config,
+                    training_patients,
+                    test_patients,
+                )
+            )
+    results = ordered_map(_run_supervised_cell, tasks, workers)
     return pd.DataFrame([row for rows in results for row in rows])
 
 

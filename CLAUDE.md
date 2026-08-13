@@ -2,7 +2,7 @@
 
 **Owner:** Neeam Hayder (undergraduate advanced researcher, technical lead)
 **PI:** Dr. Bukhari · **Clinical Co-I:** Dr. Farhan Khan (vascular neurology, ARCADIA/StrokeNet access)
-**Last updated:** 2026-08-02
+**Last updated:** 2026-08-13
 **Read this before answering anything about this project. Every number below traces to a named source file.**
 
 > **CONFLICT RULE: the most recent statement wins.** Order of precedence, newest first:
@@ -77,8 +77,9 @@ Current written Specific Aims (Drive doc "04 - Specific Aims"):
 
 ## 4. VERIFIED PRELIMINARY RESULTS
 
-All local, all reproducible, all with 500 paired repeats and saved CSV/JSON. Master seed 20260728
-(20260729 for the supervised experiment). Python 3.12.0, numpy 1.26.4, pandas 2.2.2, scipy 1.14.1.
+The active package contains exactly three experiments: `endotype_discovery`, `transportability`,
+and `counterfactual`. All retained results are local and reproducible with saved CSV/JSON. Master
+seed 20260728. Python 3.12.0, numpy 1.26.4, pandas 2.2.2, scipy 1.14.1.
 **Never cite a number that is not in this section or in the named CSV.**
 
 ### 4.1 Renal biomarker distortion — latent endotyping
@@ -157,8 +158,12 @@ Two things to know:
 3. **Missingness hurts everyone equally, including the oracle** — that is irreducible information loss,
    not a modeling failure. Frame it that way; do not present it as a limitation of the method.
 
-### 4.5 Supervised SCM vs logistic regression — the honest null
-`outputs_associative_vs_scm/` · seed 20260729, 3000 train / 1000 test, 500 repeats.
+### 4.5 ARCHIVED — Supervised SCM vs logistic regression — the honest null
+This experiment was removed from active preliminary evidence on 2026-08-13 because real ESUS
+cohorts cannot supply mechanism labels. Its code and notebook are retained under
+`archive/supervised/`; immutable provenance remains under
+`outputs_locked/outputs_associative_vs_scm/`. Historical design: seed 20260729, 3000 train / 1000
+test, 500 repeats.
 **`metadata.json` explicitly states all three models use true labels in training — this is supervised
 classification, NOT endotype discovery.** At strong confounding (2.25 SD):
 
@@ -336,7 +341,8 @@ Sep 1 is not achievable for Tier A; the plan document proposes three scope tiers
 - `outputs_latent_endotyping/figure_P1_latent_recovery`, `figure_P2_example_patient`, `figure_S1_controls`
 - `outputs_transportability/figure_T1_transportability`, `figure_T2_transport_controls`
 - `outputs_transportability/ablations/figure_T3_shift_ablations`
-- `outputs_associative_vs_scm/figure_P1_associative_vs_scm`, `outputs/figure_P1`
+- `outputs/figure_P1`
+- Archived provenance only: `outputs_locked/outputs_associative_vs_scm/figure_P1_associative_vs_scm`
 - `figure1_causal_esus_academic.html`, `figure1_causal_esus_symbolic_draft2.html` (hand-built framework
   figure, BioRender-style — **not AI-generated**, and the PI knows this and values it)
 

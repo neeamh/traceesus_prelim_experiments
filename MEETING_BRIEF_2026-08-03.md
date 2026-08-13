@@ -1,5 +1,9 @@
 # Monday meeting brief — 3 August 2026
 
+> **Historical record:** this brief predates the 2026-08-13 archival of supervised work. Its
+> four-family inventory and supervised-comparison passages are provenance only; the active package
+> now contains three experiments.
+
 **Attending:** PI (Dr. Bukhari), Dr. Farhan Khan, Neeam
 **Agenda per PI:** review the outline doc + one-month plan → walk the proposal doc → align on aims →
 focus on supplementary material for Aims 1 and 2, especially M1.

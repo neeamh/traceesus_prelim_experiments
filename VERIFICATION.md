@@ -1,5 +1,10 @@
 # TRACE-ESUS exact-output verification
 
+> **Historical verification record:** this document records the original four-experiment
+> compatibility migration. On 2026-08-13 the supervised comparison was archived; the active CLI
+> now contains three experiments. `outputs_locked/outputs_associative_vs_scm/` remains immutable
+> provenance, while current verification executes only the three retained experiments.
+
 ## Result
 
 **PASS: no legacy CSV cell or JSON value differs.**
@@ -132,15 +137,14 @@ were confined to expected metadata and do not reflect plotted-value drift.
 
 ## Reproducibility tests
 
-`tests/test_reproducibility.py` runs every OOP experiment facade with two main
+`tests/test_reproducibility.py` runs every retained experiment facade with two main
 repeats (and two null repeats where applicable), while retaining the default
 sample sizes and numerical controls.  Its committed fixture locks SHA-256 for
-all 46 recursive legacy CSV/JSON artifacts.  It also verifies:
+all retained recursive legacy CSV/JSON artifacts.  It also verifies:
 
 - complete manifest checksum inventories;
 - audited latent, null, transport, and target-child seed sentinels;
 - absence of truth from `Cohort` and all unsupervised fit signatures;
-- the supervised-training boundary in model-comparison metadata; and
 - ordered repeat results across one and two workers when the platform permits
   process semaphores.
 
@@ -158,9 +162,8 @@ annotations, or return annotations.
 
 ## Interpretation boundary
 
-This verification establishes that modular execution reproduces the cited
-synthetic outputs exactly.  It does not validate the scientific realism of the
-data-generating processes, convert the supervised comparison into endotype
-discovery, or turn oracle/known-DGP queries into deployable fitted models.
+This historical verification establishes that modular execution reproduced the cited
+synthetic outputs exactly. It does not validate the scientific realism of the
+data-generating processes or turn oracle/known-DGP queries into deployable fitted models.
 Preserved defects, surprising behavior, dead controls, and metadata wording
 problems are recorded without correction in `NOTES.md`.

@@ -2,7 +2,7 @@
 
 **For:** Amrit & Bukhari (Approach section)
 **Prepared:** 10 Aug 2026
-**Source of record:** canonical output directories `outputs/`, `outputs_associative_vs_scm/`, `outputs_latent_endotyping/`, `outputs_transportability/` (exact-identity verified against `outputs_locked/` and `outputs_refactored/`: 46 files, 933,333 CSV cells, 423 JSON leaves, **0 discrepancies** — `VERIFICATION.md`).
+**Source of record:** retained output directories `outputs/`, `outputs_latent_endotyping/`, and `outputs_transportability/`. The archived supervised result remains provenance-only at `outputs_locked/outputs_associative_vs_scm/`; it is not preliminary evidence. Historical four-experiment identity verification is recorded in `VERIFICATION.md`.
 
 **Every number below is already computed.** The "Result" column reports observed values, not projections. All estimates are means over **500 paired simulation repeats** with 95% CIs. Environment: Python 3.12.0 / NumPy 1.26.4 / pandas 2.2.2 / SciPy 1.14.1.
 
@@ -21,16 +21,15 @@
 | **Pooled associative LCM** | E4 transport | Fit on pooled source hospitals, no target recalibration |
 | **Frozen / Modular causal latent SCM** | E4 transport | Frozen = no target refit; **Modular = our method** (nuisance paths refit on unlabeled target) |
 
-**The four experiments.**
+**The three retained experiments.** Historical IDs E1, E3, and E4 are preserved so citations do not silently renumber. E2 is archived.
 
 | ID | Experiment | Directory | Estimand | Runtime |
 |---|---|---|---|---|
 | E1 | Known-DGP counterfactual (preliminary) | `outputs/` | Oracle/known-model query comparison — **no SCM is fitted** | 22.5 s |
-| E2 | Supervised model comparison | `outputs_associative_vs_scm/` | Supervised classification with true labels in training — **not discovery** | 206.3 s |
 | E3 | **Latent endotype discovery** | `outputs_latent_endotyping/` | Unsupervised; truth touched only after fitting — **primary Aim 1 evidence** | 524.1 s |
 | E4 | Transportability | `outputs_transportability/` | Source→target generalization under nuisance + assay + missingness shift | 419.3 s |
 
-**Renal-distortion grids differ across experiments** — E1/E2 use 0, 0.75, 1.50, 2.25 SD; E3 uses 0, 0.50, 1.00, 1.50 SD. "Strong" means 2.25 SD in E1/E2 and 1.50 SD in E3. Do not quote a single "strong" level across experiments.
+**Renal-distortion grids differ across retained experiments** — E1 uses 0, 0.75, 1.50, 2.25 SD; E3 uses 0, 0.50, 1.00, 1.50 SD. "Strong" means 2.25 SD in E1 and 1.50 SD in E3. Do not quote a single "strong" level across experiments.
 
 ---
 
@@ -60,7 +59,7 @@ Reported at the strongest renal distortion (1.50 SD) unless noted. "Causal" = bi
 
 ---
 
-## Table 2 — Supporting metrics (E1, E2, E4)
+## Table 2 — Supporting metrics (E1, E4)
 
 | Experiment | Metric | What it measures | How to measure | Threshold | Why it's needed | Result (observed) |
 |---|---|---|---|---|---|---|
@@ -74,10 +73,13 @@ Reported at the strongest renal distortion (1.50 SD) unless noted. "Causal" = bi
 | **E4** | **Negative control — exact source/target identity** | Literal identity control, distinct from the "no shift" curve point | Rerun with target = source distribution exactly | 95% CI entirely inside ±1.0 pp | The main curve's "No shift" point matches only the *reference* hospital, not the 3-hospital mixture — this is the true null | **+0.281 pp** [0.229, 0.333] ✓ |
 | **E4** | **Shift ablations** | Which shift component drives the gain | Isolate kidney-only / inflammation-only / assay-only / missingness-only / combined; accuracy change vs no shift | Directional, prespecified | Locates the mechanism of the advantage instead of asserting it | Kidney-only: **Modular −0.03 pp** vs Frozen −1.72, Pooled −3.90 → **the gain is renal-path modularity**<br>Missingness-only: −4.35 pp for *every* method incl. oracle → **not a causal-model advantage**<br>Inflammation-only: ≤0.35 pp all methods<br>**Assay-only: exactly 0.000 for all five methods** |
 | **E4** | Path recovery in target | Whether refit nuisance paths match the target's true paths | Bias of refit renal and inflammation paths, strong target, SD units | \|bias\| ≤0.15 SD | Modularity claim requires the refit paths to actually be right | Renal **−0.0203 SD**, inflammation **+0.0100 SD** ✓ |
-| **E2** | Supervised ceiling comparison | Whether the SCM beats associative models *when both get true labels* | 500 paired train (n=3000) / test (n=1000) repeats; L2 logistic (biomarkers only), L2 logistic (+ renal status), fitted SCM; strongest distortion 2.25 SD | Prespecified: SCM ≥ biomarkers-only; SCM ≈ kidney-adjusted | Separates "the graph helps" from "one model got renal status and the other didn't" | vs biomarkers-only: **+4.44 pp** [4.33, 4.55]; false atrial −23.52 pp<br>vs kidney-adjusted: **+0.005 pp** [−0.013, +0.023] — **CI includes zero** |
 | **E1** | Known-DGP kidney-aware vs kidney-blind | Ceiling-case separation with the true generative model in hand | Known-model posterior queries, 500 repeats × 1000 patients, 2.25 SD | Directional | Establishes the size of the confounding problem before any fitting | Accuracy **+7.60 pp** [7.49, 7.71] (81.22% vs 73.62%)<br>False atrial **−58.96 pp** (13.40% vs 72.36%) |
 | **E1** | K=1 null (known-DGP) | False K=2 rate after subtracting the *known true* renal contribution | 500 null cohorts, diagonal Gaussian K=1/K=2, composite rule (BIC + convergence + min weight 0.10) | ≤5% | Distinct question from the E3 null — do not merge the two | **0/500 (0%)**, Wilson [0, 0.76%]; median ΔBIC **+40.93** |
-| **E1/E2** | **Counterfactual increment** | Whether the counterfactual query adds anything over the same-SCM posterior | Max \|counterfactual score − same-SCM posterior\| across all repeats | ≤ numerical tolerance (structural prediction) | Pre-empts the claim that the causal *query* is doing the work | **≈7.77×10⁻¹⁶** (floating-point noise) — **exactly zero increment**. In a symmetric K=2 model normalized disablement and sufficiency are monotone transforms of the correctly specified posterior; this is a mathematical identity, not a null result |
+| **E1** | **Counterfactual increment** | Whether the counterfactual query adds anything over the same-SCM posterior | Max \|counterfactual score − same-SCM posterior\| across all repeats | ≤ numerical tolerance (structural prediction) | Pre-empts the claim that the causal *query* is doing the work | **≈7.77×10⁻¹⁶** (floating-point noise) — **exactly zero increment**. In a symmetric K=2 model normalized disablement and sufficiency are monotone transforms of the correctly specified posterior; this is a mathematical identity, not a null result |
+
+### Archived E2 provenance — do not use as preliminary evidence
+
+The former supervised ceiling comparison used synthetic mechanism labels during training. It was removed because such labels cannot exist in a real ESUS cohort. Its cited values remain unchanged under `outputs_locked/outputs_associative_vs_scm/`: SCM versus biomarkers-only **+4.44 pp** [4.33, 4.55]; SCM versus kidney-adjusted **+0.005 pp** [−0.013, +0.023].
 
 ---
 
@@ -87,7 +89,7 @@ State these as planned, not as results. Writing them as blanks in a submitted Ap
 
 | Draft row | Status | What to do |
 |---|---|---|
-| **Clinical-rule benchmark** | **Not implemented.** `traceesus/models/clinical_rule.py` is a reserved empty module; none of the four experiments implements a clinical decision rule. | Either drop it from Aim 1, or specify the rule now (e.g. AF-risk score / left-atrial size threshold) and run it. This is the most reviewer-visible gap — every clinician reviewer will ask "versus what a cardiologist already does." |
+| **Clinical-rule benchmark** | **Not implemented.** `traceesus/models/clinical_rule.py` is a reserved empty module; none of the three retained experiments implements a clinical decision rule. | Either drop it from Aim 1, or specify the rule now (e.g. AF-risk score / left-atrial size threshold) and run it. This is the most reviewer-visible gap — every clinician reviewer will ask "versus what a cardiologist already does." |
 | **Uncertainty coverage** | **Not computed.** Only mean posterior entropy exists. No interval-coverage metric was implemented. | Either reframe the row as "posterior sharpness (entropy)" — data exists, Table 1 — or specify nominal-vs-empirical coverage and run it. |
 | **Selective risk** | **Not computed.** No abstention/coverage curve exists in any output. | Cheap to add from saved posteriors: risk at 90/80/70% coverage after abstaining on lowest-confidence cases. Strong reviewer-facing metric for a diagnostic model. |
 
@@ -95,7 +97,7 @@ State these as planned, not as results. Writing them as blanks in a submitted Ap
 
 ## Three things a reviewer will hit, and how to pre-empt them
 
-**1. The honest headline is narrower than "causal beats associative."** Against the *naive* associative model the win is enormous (+24.08 accuracy points, ARI 0.038→0.408). Against the *renal-adjusted* associative model it is +0.30 pp — real and CI-excluding-zero, but small. In the supervised setting (E2) the SCM and the kidney-adjusted logistic are statistically indistinguishable (CI includes zero). The defensible claim is: **the biological constraint buys you, without being told, what an associative model only gets if someone already knew to adjust for kidney function — and it does so with 12 parameters instead of 14, and without inventing endotypes in the K=1 null, which the adjusted model also passes but the naive one fails 100% of the time.** The *unique* wins are the K=1 null and transport modularity, not raw accuracy.
+**1. The honest headline is narrower than "causal beats associative."** Against the *naive* associative model the win is enormous (+24.08 accuracy points, ARI 0.038→0.408). Against the *renal-adjusted* associative model it is +0.30 pp — real and CI-excluding-zero, but small. The defensible claim is: **the biological constraint buys you, without being told, what an associative model only gets if someone already knew to adjust for kidney function — and it does so with 12 parameters instead of 14, and without inventing endotypes in the K=1 null, which the adjusted model also passes but the naive one fails 100% of the time.** The *unique* wins are the K=1 null and transport modularity, not raw accuracy.
 
 **2. The counterfactual query provably adds nothing here.** Say it first, in the Approach, framed as a design finding: in a symmetric K=2 model the counterfactual score is a monotone transform of the correct posterior, so the structure — not the query — is what pays. Aim 2/3 with asymmetric or multi-mechanism structure is where a counterfactual increment can exist.
 
@@ -109,7 +111,7 @@ State these as planned, not as results. Writing them as blanks in a submitted Ap
 |---|---|
 | Verification | 46 files, 82,616 CSV rows, 933,333 cells, 423 JSON leaves, **0 discrepancies**; 8 PNGs pixel-identical; PDFs raster-identical at 180 dpi |
 | Test suite | 44 passed, 1 skipped (sandbox process-semaphore limitation only) |
-| Seeds | E1 `20260728`; E2 `20260729`; E3 `20260728`; E4 `20260728 + 404404` |
+| Seeds | E1 `20260728`; E3 `20260728`; E4 `20260728 + 404404` |
 | Repeats | 500 per level throughout; 500 additional null repeats in E1 and E3 |
 | CI definition | Two-sided 95% t interval for the mean across paired repeats; empirical 2.5/97.5 repeat quantiles stored separately |
-| Truth boundary | E3/E4: truth never reaches a fit function; used only post-fit in `evaluate_posterior`. E2: **truth IS used in training** (supervised by design). E1: **no SCM is fitted** (known-DGP oracle queries) |
+| Truth boundary | E3/E4: truth never reaches a fit function; used only post-fit in `evaluate_posterior`. E1: **no SCM is fitted** (known-DGP oracle queries) |

@@ -1,34 +1,10 @@
 # TRACE-ESUS experiments
 
-TRACE-ESUS is a simulation package for four distinct scientific experiments on causal endotyping in cryptogenic stroke. The distinctions are part of the estimands, not naming conventions: the model-comparison experiment is supervised, the discovery and transport experiments fit without mechanism labels, and the preliminary counterfactual experiment queries a known data-generating SCM rather than fitting one.
+TRACE-ESUS is a simulation package for three scientific experiments on causal endotyping in cryptogenic stroke. Endotype discovery and transportability fit without mechanism labels; the preliminary counterfactual experiment queries a known data-generating SCM rather than fitting one.
 
 The package retains the legacy numerical kernels because the existing tables are cited in an NIH proposal and manuscript. Refactoring is not permission to change a seed, numerical default, iteration order, reduction order, or algorithm. Suspected defects and limitations are recorded in [`NOTES.md`](NOTES.md) and deliberately remain unchanged.
 
 ## Experiments
-
-### `model_comparison`: supervised classification
-
-Scientific question: when true synthetic mechanism labels are available for training, how do three classifiers behave as renal distortion of a biomarker increases?
-
-The methods are:
-
-- L2-penalized logistic regression using biomarkers only;
-- L2-penalized logistic regression using biomarkers plus observed kidney status; and
-- a fitted structural causal model queried with posterior-integrated sufficiency and disablement scores.
-
-All three methods use true mechanism labels during training. This experiment is **supervised classification, not endotype discovery**. Any performance difference must be interpreted within that boundary. In the symmetric K=2 SCM used here, the counterfactual scores are ranking-equivalent to the same-SCM posterior up to floating-point noise; this experiment does not show that a causal query outperforms its own posterior.
-
-Legacy output directory: `outputs_associative_vs_scm/`
-
-```text
-raw_metrics.csv
-fit_diagnostics.csv
-summary.csv
-paired_contrasts.csv
-metadata.json
-figure_P1_associative_vs_scm.png
-figure_P1_associative_vs_scm.pdf
-```
 
 ### `endotype_discovery`: unlabeled latent recovery
 
@@ -122,6 +98,10 @@ figure_P1.pdf
 
 Every package run adds `manifest.json` without renaming or rewriting the legacy contract. The manifest records the complete config, master seed, package version, Git state, dependency versions, wall-clock runtime, and SHA-256 checksums for generated artifacts.
 
+The former supervised comparison is not part of the executable package. Its source history is
+preserved under `archive/supervised/`, and its immutable cited provenance remains under
+`outputs_locked/outputs_associative_vs_scm/`.
+
 ## Installation
 
 Use the proposal environment exactly. Do not substitute a newer “compatible” scientific stack for a reproduction run.
@@ -158,7 +138,7 @@ python run.py figures endotype_discovery
 python run.py verify --against ./outputs_locked
 ```
 
-`--repeats` overrides each experiment's repeat count for runtime estimation. It does not define a proposal-equivalent run. `--workers` preserves ordered result collection; the supervised `model_comparison` kernel is historically sequential and accepts only one worker. For one experiment, `--out` is that experiment's output directory. For `run all`, it is a parent directory under which the four legacy directory names are created.
+`--repeats` overrides each experiment's repeat count for runtime estimation. It does not define a proposal-equivalent run. `--workers` preserves ordered result collection. For one experiment, `--out` is that experiment's output directory. For `run all`, it is a parent directory under which the three retained directory names are created.
 
 `figures` reads the existing compatibility tables and regenerates figures without rerunning simulation. It requires the corresponding CSV/JSON outputs to already exist.
 When a manifest is present, the command restores that run's exact nested config
@@ -172,7 +152,6 @@ Experiment config classes and their `CONFIG` instances are defined in the releva
 
 | Scientific or computational parameter | Change it here |
 |---|---|
-| Supervised sample sizes, renal grid, seed, logistic controls, fitted-SCM controls | `configs/model_comparison.py` (`ComparisonConfig`) |
 | Latent DGP: cohort sizes, prevalence, mechanism effects, renal distortion grid, noise | `configs/endotype_discovery.py` (`SimulationConfig`) |
 | Latent fitting: EM tolerance/cap, variance and probability floors, starts, calibration bins | `configs/endotype_discovery.py` (`FittingConfig`) |
 | Latent repeats, master seed, worker count, validation thresholds | `configs/endotype_discovery.py` (`ExperimentConfig`) |
@@ -197,13 +176,13 @@ The unlabeled model registry is the extension point for the planned source-of-ga
 
 An append-only registry preserves the established cohort pairing and existing initial-fit stream positions. Any intentional change to seed allocation, retry behavior, method order, or the number/order of random draws requires a new locked baseline; it is not a refactor.
 
-This one-row extension contract applies specifically to the executable `endotype_discovery` registry used by the planned source-of-gain ablation. The model tuples exposed by `model_comparison` and `transportability` are compatibility/validation registries: they assert scientific boundaries and historical row order, while their proposal-locked kernels remain the numerical dispatch path. Appending to either tuple alone does not add an evaluated method. Generalizing those two repeat kernels would be a separately verified feature, not something this identity refactor pretends to have done.
+This one-row extension contract applies specifically to the executable `endotype_discovery` registry used by the planned source-of-gain ablation. The model tuple exposed by `transportability` is a compatibility/validation registry: it asserts scientific boundaries and historical row order, while its proposal-locked kernel remains the numerical dispatch path. Appending to that tuple alone does not add an evaluated method. Generalizing the transport repeat kernel would be a separately verified feature.
 
 ## Compatibility architecture
 
 The package separates public contracts from frozen arithmetic. `traceesus/core/` owns cohort, model, experiment, metric, statistical, runner, and output contracts. `traceesus/models/`, `traceesus/simulators/`, and `traceesus/queries/` expose typed adapters. Each experiment's `kernel.py` retains any sequence of draws or floating-point operations that could affect cited outputs.
 
-This boundary explains two intentional non-unifications. First, the preliminary/model-comparison simulator and latent-discovery simulator are both two-mechanism generators, but their priors, integer dtypes, effect defaults, and normal-draw expressions differ; forcing them through one implementation would not be an identity-preserving refactor. Second, the plotting package inventories the shared palette and exact figure sizes and exposes named panel adapters, but the legacy kernels retain artist construction order so encoded figures remain reproducible.
+This boundary explains two intentional non-unifications. First, the preliminary counterfactual simulator and latent-discovery simulator are both two-mechanism generators, but their priors, integer dtypes, effect defaults, and normal-draw expressions differ; forcing them through one implementation would not be an identity-preserving refactor. Second, the plotting package inventories the shared palette and exact figure sizes and exposes named panel adapters, but the retained kernels preserve artist construction order so encoded figures remain reproducible.
 
 ## Exact verification
 

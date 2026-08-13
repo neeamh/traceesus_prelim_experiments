@@ -3,7 +3,7 @@
 from .config import ParallelConfig, ValidatedConfig
 from .experiment import Experiment
 from .model import FitDiagnostics, FittedModel, Model
-from .simulator import Cohort, SimulatedData, SimulationTruth, Simulator
+from .simulator import Cohort, SimulatedData, SimulationTruth, Simulator, SupervisedCohort
 
 __all__ = [
     "Cohort",
@@ -15,5 +15,6 @@ __all__ = [
     "SimulatedData",
     "SimulationTruth",
     "Simulator",
+    "SupervisedCohort",
     "ValidatedConfig",
 ]
