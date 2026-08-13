@@ -1,0 +1,13 @@
+{
+  "metric_row_count_matches": true,
+  "diagnostic_row_count_matches": true,
+  "null_row_count_matches": true,
+  "all_probabilistic_metrics_finite": true,
+  "fitted_model_convergence_rate": 1.0,
+  "minimum_effective_class_fraction": 0.2518695940087484,
+  "strong_level_causal_renal_effect_bias_sd": -0.005994415745813164,
+  "strong_level_causal_renal_effect_bias_within_0_10_sd": true,
+  "null_k2_convergence_rate": 1.0,
+  "truth_not_accepted_by_fit_function_interfaces": true,
+  "all_required_checks_pass": true
+}

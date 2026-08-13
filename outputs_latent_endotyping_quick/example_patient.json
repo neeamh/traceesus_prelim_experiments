@@ -1,0 +1,24 @@
+{
+  "patient_index_in_example_cohort": 873,
+  "selection_reason": "largest associative-minus-causal atrial probability gap",
+  "true_mechanism": "competing",
+  "renal_dysfunction": 1,
+  "renal_effect_sd": 2.25,
+  "observed_biomarkers": {
+    "NT-proBNP-like biomarker": -0.7809147879532432,
+    "Atrial electrical evidence": -0.9862854002073874,
+    "Competing-mechanism evidence": 0.26417210170235916
+  },
+  "causal_estimated_renal_contribution": {
+    "NT-proBNP-like biomarker": 2.3352198849885237,
+    "Atrial electrical evidence": 0.0,
+    "Competing-mechanism evidence": 0.0
+  },
+  "causal_renal_neutralized_biomarkers": {
+    "NT-proBNP-like biomarker": -3.116134672941767,
+    "Atrial electrical evidence": -0.9862854002073874,
+    "Competing-mechanism evidence": 0.26417210170235916
+  },
+  "associative_atrial_probability": 0.3386078440862237,
+  "causal_atrial_probability": 0.001676891389878878
+}

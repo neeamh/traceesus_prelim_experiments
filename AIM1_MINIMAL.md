@@ -1,0 +1,15 @@
+# Aim 1 Metrics
+
+All results: mean over 500 paired simulation repeats, 95% CI. "Strong renal distortion" = 1.5 SD.
+
+| Experiment | Metric | What it Measures | How to Measure | Why it's Needed | Result |
+|---|---|---|---|---|---|
+| Component necessity | K=1 false discovery | Whether the model invents endotypes that don't exist | Generate cohorts with one homogeneous regime; count how often K=2 is selected | The signature failure of subtyping papers, and the check the field routinely skips | Causal SCM 0/500 (0%) ✓<br>Renal-adjusted 0/500 (0%) ✓<br>Associative pooled 500/500 (100%) ✗<br>median ΔBIC +27.3 vs −277.8 |
+| Accuracy comparison | Mechanism recovery | Top-rank accuracy against planted truth, strong renal distortion (1.5 SD) | Test fitted model on held-out test set; measure portion of mechanism guesses correct | The model must recover real structure, not just avoid inventing fake structure | 0.76 pp from oracle ✓<br>Causal 81.9% · Oracle 82.7%<br>Renal-adjusted 81.6% · Associative pooled 57.9% |
+| Accuracy comparison | False atrial attribution | Proportion of renal-impaired, true-competing patients called atrial | Restrict to renal-impaired patients with Z=competing; measure portion assigned atrial | Model misclassification in the high-stakes clinical case | 1.16 pp from oracle ✓<br>Causal 18.5% · Oracle 17.3%<br>Renal-adjusted 19.7% · Associative pooled 76.0% |
+| Accuracy comparison | Calibration | Whether stated confidence matches observed frequency | 10-bin expected calibration error on posterior atrial probability | Miscalibration is how a "good AUC" model still harms patients | Causal 0.0450 [0.0431, 0.0470] ✓<br>Oracle 0.0279 · Renal-adjusted 0.0467 ✓<br>Associative pooled 0.3431 ✗ |
+| Transport | Transport degradation | Performance lost when the environment changes | Accuracy at no shift minus accuracy at strong shift, held-out hospital | Verify the model still functions in an environment it wasn't trained in | 0.09 pp from oracle ✓<br>Modular −3.92 · Oracle −3.83<br>Target-calib. −4.08 · Frozen −5.42 · Pooled-across-hospitals −6.86 |
+| Transport | Negative control | That the causal machinery buys nothing when there is nothing to buy | Modular causal minus target-calibrated associative accuracy at no shift; equivalence test against a ±1.0 pp margin | Pre-empts "your gain is just extra model flexibility" | +0.299 pp [0.247, 0.351]<br>CI entirely inside the equivalence margin ✓ |
+| Counterfactual simulation | Counterfactual increment | Whether the counterfactual query adds anything over the same-SCM posterior | Max \|counterfactual score − same-SCM posterior\| across all repeats | Pre-empts the claim that the causal *query*, rather than the structure, is doing the work | ≈7.8×10⁻¹⁶ — exactly zero increment.<br>In a symmetric K=2 model, normalized disablement and sufficiency are monotone transforms of the correctly specified posterior. A mathematical identity, not a null result. |
+
+**Planned, not yet run:** clinical-rule benchmark, uncertainty coverage, selective risk.

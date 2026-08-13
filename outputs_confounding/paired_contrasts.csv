@@ -1,0 +1,31 @@
+atrial_probability_if_renal_impaired,comparator,metric,difference_definition,repeat_count,mean_difference,ci95_low,ci95_high
+0.5,Associative latent class model,accuracy,causal SCM minus comparator,200,0.24762499999999996,0.23889125792102217,0.25635874207897774
+0.5,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.5557199019229261,-0.601806310796443,-0.5096334930494092
+0.5,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,200,0.00322499999999999,0.001920734210677328,0.004529265789322652
+0.5,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.011496480229067034,-0.021227698120079803,-0.0017652623380542635
+0.5,Data-generating oracle (reference),accuracy,causal SCM minus comparator,200,-0.008274999999999987,-0.00968040688233734,-0.006869593117662635
+0.5,Data-generating oracle (reference),false_atrial_renal_competing,causal SCM minus comparator,200,0.012894687329366354,0.004352750139684645,0.021436624519048063
+0.55,Associative latent class model,accuracy,causal SCM minus comparator,200,0.23588499999999996,0.22776456127889683,0.24400543872110309
+0.55,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.5960205809453977,-0.6317918481718465,-0.5602493137189488
+0.55,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,200,0.0033399999999999914,0.002152668157889503,0.004527331842110479
+0.55,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.012802142781723962,-0.024292899702309603,-0.001311385861138322
+0.55,Data-generating oracle (reference),accuracy,causal SCM minus comparator,200,-0.006864999999999986,-0.008067315647420206,-0.005662684352579766
+0.55,Data-generating oracle (reference),false_atrial_renal_competing,causal SCM minus comparator,200,0.00196379079882279,-0.007006677427580329,0.01093425902522591
+0.6,Associative latent class model,accuracy,causal SCM minus comparator,200,0.21532,0.20909994306328933,0.2215400569367107
+0.6,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.6187455701897988,-0.6381405291507215,-0.5993506112288761
+0.6,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,200,0.003074999999999993,0.0016122948504496979,0.004537705149550288
+0.6,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.008848965800793227,-0.02169646465622883,0.003998533054642376
+0.6,Data-generating oracle (reference),accuracy,causal SCM minus comparator,200,-0.006944999999999991,-0.008238113303755722,-0.00565188669624426
+0.6,Data-generating oracle (reference),false_atrial_renal_competing,causal SCM minus comparator,200,0.010216269900572388,0.0012062584261861454,0.01922628137495863
+0.7,Associative latent class model,accuracy,causal SCM minus comparator,200,0.20054,0.1948172981018578,0.2062627018981422
+0.7,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.5489854582027403,-0.5665493000993569,-0.5314216163061236
+0.7,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,200,0.002169999999999999,0.000819967102888876,0.0035200328971111226
+0.7,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,0.003987443740493603,-0.006709350215324491,0.014684237696311699
+0.7,Data-generating oracle (reference),accuracy,causal SCM minus comparator,200,-0.006264999999999992,-0.007543927478945094,-0.00498607252105489
+0.7,Data-generating oracle (reference),false_atrial_renal_competing,causal SCM minus comparator,200,-0.0007144735434017679,-0.012137283185348163,0.010708336098544626
+0.8,Associative latent class model,accuracy,causal SCM minus comparator,200,0.18592499999999995,0.1810418858297013,0.1908081141702986
+0.8,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,-0.441554681744966,-0.4561587994320591,-0.42695056405787285
+0.8,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,200,0.0030799999999999994,0.001528012476072628,0.004631987523927371
+0.8,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,200,0.01195076234293171,-0.0019230007118515961,0.025824525397715015
+0.8,Data-generating oracle (reference),accuracy,causal SCM minus comparator,200,-0.006335000000000002,-0.007404017433785244,-0.00526598256621476
+0.8,Data-generating oracle (reference),false_atrial_renal_competing,causal SCM minus comparator,200,0.011707720302097144,-0.001988130063193731,0.02540357066738802

@@ -1,0 +1,41 @@
+{
+  "config": {
+    "seed": 20260729,
+    "training_patients": 3000,
+    "test_patients": 1000,
+    "repeats_per_level": 500,
+    "confounding_strengths_sd": [
+      0.0,
+      0.75,
+      1.5,
+      2.25
+    ],
+    "confounding_labels": [
+      "None\n(0 SD)",
+      "Weak\n(0.75 SD)",
+      "Moderate\n(1.50 SD)",
+      "Strong\n(2.25 SD)"
+    ],
+    "logistic_l2_penalty": 1.0,
+    "logistic_max_iter": 50,
+    "logistic_tolerance": 1e-08,
+    "scm_prior_smoothing": 0.5,
+    "variance_floor": 1e-06,
+    "counterfactual_disablement_weight": 0.5,
+    "counterfactual_sufficiency_weight": 0.5
+  },
+  "models": {
+    "Associative logistic regression (biomarkers only)": "L2-penalized logistic regression fit to the three continuous biomarkers; no graph and no renal-status input.",
+    "Associative logistic regression (+ kidney status)": "The same logistic regression fit to the three biomarkers plus observed renal status; no graph and no interventions.",
+    "Structural causal model (counterfactual)": "Fitted prespecified SCM with mechanism and renal biomarker equations; posterior-integrated disablement and sufficiency."
+  },
+  "training_label_boundary": "All three models use known synthetic mechanism labels during training. This is supervised classification, not unsupervised endotype discovery.",
+  "software_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "ci_definition": "Two-sided 95% t confidence interval for the mean across 500 paired train/test simulation repeats."
+}

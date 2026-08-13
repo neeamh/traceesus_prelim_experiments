@@ -1,0 +1,17 @@
+{
+  "metric_row_count_matches": true,
+  "fit_row_count_matches": true,
+  "target_diagnostic_row_count_matches": true,
+  "all_source_latent_fits_converged": true,
+  "minimum_effective_class_fraction": 0.3929413445315863,
+  "all_metrics_finite": true,
+  "maximum_assay_reconstruction_error": 8.881784197001252e-16,
+  "assay_calibration_exact_to_numerical_tolerance": true,
+  "strong_target_renal_path_bias": -0.020319185074464115,
+  "strong_target_inflammation_path_bias": 0.00999792033116898,
+  "target_path_bias_tolerance_sd": 0.15,
+  "strong_target_path_biases_within_tolerance": true,
+  "no_shift_negative_control_passes": true,
+  "truth_not_accepted_by_fit_interfaces": true,
+  "all_required_checks_pass": true
+}

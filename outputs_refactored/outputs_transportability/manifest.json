@@ -1,0 +1,246 @@
+{
+  "experiment": "transportability",
+  "config": {
+    "master_seed": 20260728,
+    "repeats": 500,
+    "workers": 4,
+    "equivalence_margin_accuracy": 0.01,
+    "simulation": {
+      "source_patients_per_hospital": 600,
+      "target_calibration_patients": 150,
+      "target_test_patients": 1000,
+      "atrial_probability": 0.5,
+      "atrial_path_effects_sd": [
+        1.25,
+        1.0,
+        0.0
+      ],
+      "competing_path_effects_sd": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "biomarker_noise_sd": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "renal_missingness_log_odds_nt": -0.6,
+      "inflammation_missingness_log_odds_competing": -0.6,
+      "assay_metadata_known": true
+    },
+    "fitting": {
+      "random_starts": 4,
+      "maximum_em_iterations": 300,
+      "relative_log_likelihood_tolerance": 1e-06,
+      "variance_floor": 0.0025000000000000005,
+      "probability_floor": 1e-05,
+      "beta_prior_pseudocount": 0.5,
+      "minimum_effective_class_fraction": 0.02,
+      "calibration_bins": 10
+    },
+    "source_hospitals": [
+      {
+        "name": "Source A",
+        "renal_prevalence": 0.25,
+        "renal_effect_nt_sd": 0.8,
+        "inflammation_prevalence": 0.2,
+        "inflammation_effect_competing_sd": 0.7,
+        "assay_offset": [
+          -0.1,
+          0.05,
+          0.0
+        ],
+        "assay_scale": [
+          0.98,
+          1.02,
+          1.0
+        ],
+        "missingness_base": [
+          0.05,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "name": "Source B",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      },
+      {
+        "name": "Source C",
+        "renal_prevalence": 0.35,
+        "renal_effect_nt_sd": 1.2,
+        "inflammation_prevalence": 0.3,
+        "inflammation_effect_competing_sd": 0.9,
+        "assay_offset": [
+          0.1,
+          -0.05,
+          0.05
+        ],
+        "assay_scale": [
+          1.02,
+          0.98,
+          1.03
+        ],
+        "missingness_base": [
+          0.09,
+          0.06,
+          0.08
+        ]
+      }
+    ],
+    "target_hospitals": [
+      {
+        "name": "No shift",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      },
+      {
+        "name": "Mild shift",
+        "renal_prevalence": 0.4,
+        "renal_effect_nt_sd": 1.25,
+        "inflammation_prevalence": 0.35,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.15,
+          -0.1,
+          0.08
+        ],
+        "assay_scale": [
+          1.05,
+          0.98,
+          1.03
+        ],
+        "missingness_base": [
+          0.12,
+          0.1,
+          0.1
+        ]
+      },
+      {
+        "name": "Moderate shift",
+        "renal_prevalence": 0.5,
+        "renal_effect_nt_sd": 1.5,
+        "inflammation_prevalence": 0.45,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.3,
+          -0.2,
+          0.16
+        ],
+        "assay_scale": [
+          1.1,
+          0.96,
+          1.06
+        ],
+        "missingness_base": [
+          0.22,
+          0.18,
+          0.17
+        ]
+      },
+      {
+        "name": "Strong shift",
+        "renal_prevalence": 0.6,
+        "renal_effect_nt_sd": 1.8,
+        "inflammation_prevalence": 0.55,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.45,
+          -0.3,
+          0.24
+        ],
+        "assay_scale": [
+          1.15,
+          0.94,
+          1.09
+        ],
+        "missingness_base": [
+          0.35,
+          0.3,
+          0.28
+        ]
+      }
+    ]
+  },
+  "master_seed": 20260728,
+  "package_version": "0.1.0",
+  "git_commit": null,
+  "git_state": "no_repository",
+  "package_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "wall_clock_runtime_seconds": 140.29117066704202,
+  "output_file_sha256": {
+    "ablations/ablation_accuracy_changes.csv": "83eb2e9e8df27162fbe0afec94c3cea7789243fe20c10959d0267602a7e82b9b",
+    "ablations/ablation_summary.csv": "be2070a821b61c1ae5de8f4a56d4a24dfff6fc0e57e789db2bea1c0567d47b55",
+    "ablations/figure_T3_shift_ablations.pdf": "1bb9f2738b02aba96cfb2218831d883e0eafcfbf86c49e48aeb6c8bbdf4ccfb6",
+    "ablations/figure_T3_shift_ablations.png": "7d573deeb32fedfde631cc6680812f8c9e236e97521ab1f7513a6dbf25673651",
+    "ablations/fit_diagnostics.csv": "3e65814a99b86f9a4b916118a03914afaf55237afccdbaa1c7a191d65891e13c",
+    "ablations/negative_control.json": "2e6f2fbdc6a241d709887049963cf2f4708e63ef5d20e41adaeeae2db50722e1",
+    "ablations/paired_ablation_contrasts.csv": "d1dc251a5281002433749d72288f3efd2d5b2dc0c33d7274fdbb0879b20b337c",
+    "ablations/raw_ablation_metrics.csv": "b09144c3e3fb8b69c944dcc73de85c2eefe0bf0e23b57d1756a27fe596d1a20b",
+    "ablations/target_calibration_diagnostics.csv": "7c75478b8d8d9546741b6f217c1b4a2f2fac0db150c10bd66326754e3f57b3a4",
+    "ablations/validation_checks.json": "e4117791e9b1828e7cacf9d040c14bb5a3b951ef8c9a00d77aab1f561e08151d",
+    "exact_no_shift_control/fit_diagnostics.csv": "4a5af28d235a646359593239416390a424bffedaab62dd285a0fbb441394518b",
+    "exact_no_shift_control/metadata.json": "2f40aa792528e16d5e0c334558514b8f9d6cfe453745a639179af691ba383972",
+    "exact_no_shift_control/negative_control.json": "374399382c66d594bba0a1058a02aaa970d4f1f9e1db4ed530902bcda57de17b",
+    "exact_no_shift_control/paired_contrasts.csv": "baa9d4854dc1215d0f01bcb377bd07905739dec921ab30c7c46e0fc160998cd9",
+    "exact_no_shift_control/raw_metrics.csv": "30c2a685a7fa853d9e0a38880aa579461840d872303af279640d98f5de28495c",
+    "exact_no_shift_control/summary.csv": "43b02c3a096d2c26d829709fb3705182b1ccdb36aa1f0fd81fd9fdc66786f5e6",
+    "exact_no_shift_control/target_calibration_diagnostics.csv": "d7629013fdaa3d6415519cc0e0dd77b8564c5ffb664f8eef8b9dd684c1e14e8b",
+    "exact_no_shift_control/validation_checks.json": "089ff8cfb541bd438e09c550d10a1131562b03cb593f1684609684baca02aa14",
+    "figure_T1_transportability.pdf": "a533ff4836a22ce92c97c28daca0e015c96f4b54a47e2fd047f7c3298794869f",
+    "figure_T1_transportability.png": "6a171b0c199aa86c4db03e0f8bfc1ccc7f61b4375f0518fd2400c65b4787d713",
+    "figure_T2_transport_controls.pdf": "90801f906cab5dc9bf3d2d154dea4c21cc6afb14a134ffee836e634a52e01192",
+    "figure_T2_transport_controls.png": "15834b627a850b946228334b8fb5fc2e0e766ab5be9d6e18d51893e213807e43",
+    "fit_diagnostics.csv": "3e65814a99b86f9a4b916118a03914afaf55237afccdbaa1c7a191d65891e13c",
+    "metadata.json": "dca706fa9e43257bdd13f00908ce955d975711ae9fde3198551e7f23d175a3ad",
+    "negative_control.json": "2e6f2fbdc6a241d709887049963cf2f4708e63ef5d20e41adaeeae2db50722e1",
+    "paired_transport_contrasts.csv": "ac5059393b146b5e09e240280c369b1119955ae5109a6478cdba5d8c82f10aa0",
+    "raw_transport_metrics.csv": "37cc6ca983ee55c1f9c40c9ee77878922a039c3fc27d6f33861e185e455a0bed",
+    "target_calibration_diagnostics.csv": "2ae3888b8dc1b70e5fe94868394c27fff1b368ffb51f6b266e13f837937c9951",
+    "transport_degradation.csv": "8e2e62e039ddb135767660a68e785dfb1edfb3c3de88bb99912d54482f5ef886",
+    "transport_summary.csv": "3a8660a7828899973f3efee211b6d38b1894e4716d7f8eb98a3deef7229b7641",
+    "validation_checks.json": "e4117791e9b1828e7cacf9d040c14bb5a3b951ef8c9a00d77aab1f561e08151d"
+  }
+}

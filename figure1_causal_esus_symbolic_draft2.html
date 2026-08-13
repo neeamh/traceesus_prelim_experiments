@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Figure 1 — Symbol-driven causal endotyping framework</title>
+  <style>
+    :root {
+      --ink: #182736;
+      --navy: #173f67;
+      --teal: #2f7475;
+      --amber: #b87422;
+      --red: #9e3f3a;
+      --blue-soft: #edf3f8;
+      --teal-soft: #eaf3f2;
+      --amber-soft: #fbf4e8;
+      --gray-soft: #f5f7f9;
+      --line: #aab5bf;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 1600px;
+      height: 960px;
+      margin: 0;
+      overflow: hidden;
+      background: var(--white);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .page {
+      width: 1600px;
+      height: 960px;
+      padding: 40px 50px 30px;
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 28px;
+      padding-bottom: 19px;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 37px;
+      line-height: 1.08;
+      letter-spacing: -0.35px;
+    }
+
+    h1 span { font-weight: 400; }
+
+    .header-equation {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 5px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 25px;
+      white-space: nowrap;
+    }
+
+    .header-equation .step-arrow {
+      color: var(--line);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 24px;
+    }
+
+    .workflow {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 0.92fr 54px 1.18fr 54px 0.9fr;
+      align-items: stretch;
+      padding: 22px 0 16px;
+    }
+
+    .flow-arrow {
+      position: relative;
+      align-self: center;
+      width: 34px;
+      height: 4px;
+      margin: 0 auto;
+      background: var(--ink);
+    }
+
+    .flow-arrow::after {
+      content: "";
+      position: absolute;
+      right: -2px;
+      top: -7px;
+      border-left: 14px solid var(--ink);
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+    }
+
+    .panel {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+      border: 1.6px solid #8e9aa5;
+      border-top: 7px solid var(--navy);
+      border-radius: 7px;
+      padding: 19px 21px 18px;
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+    }
+
+    .panel.query { border-top-color: var(--teal); }
+    .panel.test { border-top-color: var(--amber); }
+
+    .stage-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 13px;
+    }
+
+    .stage {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1.6px;
+      color: var(--navy);
+    }
+
+    .query .stage { color: var(--teal); }
+    .test .stage { color: var(--amber); }
+
+    .aim {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      color: #667584;
+    }
+
+    .visual-stack {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 0;
+    }
+
+    .symbol-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .math {
+      font-family: "Times New Roman", Times, serif;
+      font-style: italic;
+    }
+
+    .person-card {
+      width: 100%;
+      min-height: 86px;
+      border: 1.4px solid var(--line);
+      border-radius: 7px;
+      background: var(--gray-soft);
+      padding: 9px 14px;
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .person-card svg {
+      width: 64px;
+      height: 64px;
+    }
+
+    .x-symbol {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 34px;
+      font-style: italic;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .covariate-dots {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .covariate-dots span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1.8px solid var(--navy);
+      background: var(--white);
+    }
+
+    .covariate-dots span:nth-child(2) { background: var(--navy); }
+    .covariate-dots span:nth-child(4) { background: var(--teal); border-color: var(--teal); }
+
+    .v-arrow {
+      width: 3px;
+      height: 23px;
+      background: var(--line);
+      position: relative;
+      flex: 0 0 23px;
+    }
+
+    .v-arrow::after {
+      content: "";
+      position: absolute;
+      left: -5px;
+      bottom: -1px;
+      border-top: 9px solid var(--line);
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+    }
+
+    .latent-wrap {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 116px 1fr;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .regime-dots {
+      display: flex;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .regime-dots.right { justify-content: flex-start; }
+
+    .regime-dots span {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      background: var(--white);
+    }
+
+    .regime-dots span.selected {
+      border-color: var(--navy);
+      background: var(--navy);
+    }
+
+    .latent-node {
+      width: 116px;
+      height: 98px;
+      border: 3px solid var(--navy);
+      border-radius: 50%;
+      background: var(--blue-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 29px;
+      font-style: italic;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.12;
+    }
+
+    .gate-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .gate-symbol {
+      position: relative;
+      height: 86px;
+      border: 1.6px solid #8db5b4;
+      border-radius: 7px;
+      background: var(--teal-soft);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .gate-symbol svg {
+      width: 42px;
+      height: 42px;
+    }
+
+    .gate-symbol .g-label {
+      font-family: "Times New Roman", Times, serif;
+      font-style: italic;
+      font-size: 19px;
+      color: #215c5e;
+    }
+
+    .biomarker-card {
+      width: 100%;
+      height: 105px;
+      border: 1.6px solid var(--navy);
+      border-radius: 7px;
+      background: var(--blue-soft);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
+      justify-items: center;
+      padding: 10px 12px;
+      position: relative;
+    }
+
+    .bio-label {
+      position: absolute;
+      right: 10px;
+      top: 7px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 20px;
+      font-style: italic;
+      color: var(--navy);
+    }
+
+    .biomarker-card svg {
+      width: 64px;
+      height: 56px;
+    }
+
+    .twins {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 0.88fr 28px 1.12fr;
+      gap: 9px;
+      align-items: stretch;
+    }
+
+    .twin-card {
+      border: 1.5px solid var(--line);
+      border-radius: 7px;
+      background: var(--gray-soft);
+      padding: 13px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .twin-card.cf {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+    }
+
+    .world-symbol {
+      font-size: 26px;
+      line-height: 1;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .world-symbol.cf { color: var(--teal); }
+
+    .twin-person {
+      width: 95px;
+      height: 95px;
+      margin: 4px 0 8px;
+    }
+
+    .observed-evidence {
+      width: 100%;
+      border-top: 1px solid var(--line);
+      padding-top: 11px;
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 28px;
+      font-style: italic;
+    }
+
+    .u-chain {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      gap: 8px;
+    }
+
+    .u-chain::before,
+    .u-chain::after {
+      content: "";
+      width: 2px;
+      height: 90px;
+      background: var(--line);
+    }
+
+    .u-chain span {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-family: "Times New Roman", Times, serif;
+      font-size: 20px;
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .switch-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 11px;
+      margin-top: 4px;
+    }
+
+    .switch-card {
+      border: 1.3px solid #96b8b7;
+      border-radius: 6px;
+      background: var(--white);
+      padding: 10px 10px 9px;
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .toggle {
+      width: 56px;
+      height: 30px;
+      border-radius: 999px;
+      border: 2px solid var(--teal);
+      background: var(--teal);
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .toggle.off {
+      justify-content: flex-start;
+      border-color: #8995a0;
+      background: #dbe0e4;
+    }
+
+    .toggle span {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--white);
+    }
+
+    .do-symbol {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 23px;
+      line-height: 1.1;
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .cf-output {
+      margin-top: 5px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 18px;
+      font-style: italic;
+      color: var(--teal);
+    }
+
+    .metric-box {
+      width: 100%;
+      margin-top: 11px;
+      border: 1.5px solid var(--ink);
+      border-radius: 6px;
+      background: var(--white);
+      padding: 9px 8px;
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 19px;
+      line-height: 1.35;
+    }
+
+    .no-z {
+      width: 100%;
+      margin-top: 11px;
+      padding: 8px;
+      border-top: 1px solid #d7b4b1;
+      text-align: center;
+      color: var(--red);
+      font-family: "Times New Roman", Times, serif;
+      font-size: 21px;
+      font-style: italic;
+      font-weight: 700;
+    }
+
+    .no-z .slash {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border: 2px solid var(--red);
+      border-radius: 50%;
+      position: relative;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .no-z .slash::after {
+      content: "";
+      position: absolute;
+      width: 30px;
+      height: 2px;
+      background: var(--red);
+      transform: rotate(-45deg);
+    }
+
+    .score-stage {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .score-visual {
+      width: 100%;
+      height: 250px;
+      border: 1.5px solid #d3a96d;
+      border-radius: 7px;
+      background: var(--amber-soft);
+      display: grid;
+      grid-template-columns: 1fr 110px;
+      align-items: center;
+      gap: 8px;
+      padding: 15px 18px;
+    }
+
+    .gauge {
+      position: relative;
+      height: 190px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge svg {
+      width: 205px;
+      height: 165px;
+    }
+
+    .score-label {
+      position: absolute;
+      bottom: 9px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 31px;
+      font-style: italic;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .lock {
+      width: 96px;
+      height: 112px;
+    }
+
+    .freeze-line {
+      width: 100%;
+      margin: 17px 0 16px;
+      border-top: 3px dashed var(--amber);
+      position: relative;
+    }
+
+    .freeze-line::before {
+      content: "";
+      position: absolute;
+      top: -9px;
+      left: calc(50% - 9px);
+      width: 18px;
+      height: 18px;
+      background: var(--white);
+      border: 2px solid var(--amber);
+      transform: rotate(45deg);
+    }
+
+    .trial-visual {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .trial-equation {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 72px 42px 72px 42px 72px;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 30px;
+      font-style: italic;
+    }
+
+    .trial-node {
+      width: 68px;
+      height: 68px;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .trial-node.score {
+      border-color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .trial-symbol {
+      font-family: Arial, Helvetica, sans-serif;
+      font-style: normal;
+      font-size: 25px;
+      color: var(--line);
+    }
+
+    .ci-and-events {
+      width: 100%;
+      height: 112px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 12px;
+    }
+
+    .ci-plot,
+    .event-calc {
+      border: 1.4px solid var(--line);
+      border-radius: 6px;
+      background: var(--gray-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 9px;
+    }
+
+    .ci-plot svg {
+      width: 155px;
+      height: 78px;
+    }
+
+    .event-calc {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 27px;
+      font-style: italic;
+      line-height: 1.15;
+      text-align: center;
+    }
+
+    .rx-boundary {
+      margin-top: auto;
+      color: var(--red);
+      font-family: "Times New Roman", Times, serif;
+      font-size: 20px;
+      font-style: italic;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .rx-boundary .no-rx {
+      width: 34px;
+      height: 34px;
+      border: 2px solid var(--red);
+      border-radius: 50%;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, Helvetica, sans-serif;
+      font-style: normal;
+      font-size: 14px;
+    }
+
+    .rx-boundary .no-rx::after {
+      content: "";
+      position: absolute;
+      width: 34px;
+      height: 2px;
+      background: var(--red);
+      transform: rotate(-45deg);
+    }
+
+    .legend {
+      height: 74px;
+      border: 1.4px solid var(--line);
+      background: var(--gray-soft);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
+    }
+
+    .legend-item {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 20px;
+    }
+
+    .legend-item + .legend-item {
+      border-left: 1px solid var(--line);
+    }
+
+    .legend-math {
+      min-width: 66px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 27px;
+      font-style: italic;
+      font-weight: 700;
+      color: var(--navy);
+      text-align: center;
+    }
+
+    .legend-item:nth-child(2) .legend-math { color: var(--teal); }
+    .legend-item:nth-child(3) .legend-math { color: var(--red); }
+
+    .legend-text {
+      font-size: 14px;
+      line-height: 1.25;
+      color: #4f6070;
+    }
+  </style>
+</head>
+<body>
+  <main class="page" data-document-role="page" data-label="Figure 1. Symbol-driven causal endotyping framework for ESUS">
+    <header class="header">
+      <h1>Figure 1. <span>Causal endotyping framework for ESUS</span></h1>
+      <div class="header-equation">
+        <span>X<sub>i</sub>, B<sub>i</sub>, R<sub>i</sub></span>
+        <span class="step-arrow">→</span>
+        <span>Z<sub>i</sub>, g<sub>k</sub></span>
+        <span class="step-arrow">→</span>
+        <span>S<sub>i</sub></span>
+        <span class="step-arrow">⋮</span>
+        <span>T<sub>i</sub> × S<sub>i</sub> → Y<sub>i</sub></span>
+      </div>
+    </header>
+
+    <section class="workflow">
+      <article class="panel build">
+        <div class="stage-head"><span class="stage">1 · BUILD</span><span class="aim">AIM 1</span></div>
+        <div class="visual-stack">
+          <div class="person-card">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="14" r="9" fill="none" stroke="#173f67" stroke-width="3"/>
+              <path d="M16 55v-8c0-11 7-18 16-18s16 7 16 18v8" fill="none" stroke="#173f67" stroke-width="3" stroke-linecap="round"/>
+              <path d="M23 55V43M41 55V43" fill="none" stroke="#173f67" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <div class="x-symbol">X<sub>i</sub></div>
+              <div class="covariate-dots"><span></span><span></span><span></span><span></span><span></span></div>
+            </div>
+          </div>
+
+          <div class="v-arrow"></div>
+
+          <div class="latent-wrap">
+            <div class="regime-dots"><span></span><span class="selected"></span></div>
+            <div class="latent-node">Z<sub>i</sub><br />∈ {1,…,K}</div>
+            <div class="regime-dots right"><span></span><span></span></div>
+          </div>
+
+          <div class="v-arrow"></div>
+
+          <div class="gate-grid">
+            <div class="gate-symbol">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M3 26h8l4-11 7 22 6-19 5 8h12" fill="none" stroke="#2f7475" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="g-label">g<sub>1</sub></span>
+            </div>
+            <div class="gate-symbol">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M24 40S8 31 8 18c0-6 4-10 10-10 4 0 6 2 6 5 0-3 3-5 7-5 6 0 10 4 10 10 0 13-17 22-17 22Z" fill="none" stroke="#2f7475" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M24 13v20" stroke="#2f7475" stroke-width="2"/>
+              </svg>
+              <span class="g-label">g<sub>2</sub></span>
+            </div>
+            <div class="gate-symbol">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M24 5C18 15 11 22 11 30a13 13 0 0 0 26 0C37 22 30 15 24 5Z" fill="none" stroke="#2f7475" stroke-width="3"/>
+                <circle cx="24" cy="29" r="4" fill="#2f7475"/>
+              </svg>
+              <span class="g-label">g<sub>3</sub></span>
+            </div>
+            <div class="gate-symbol">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M24 42V23M24 23 11 10M24 23 37 10M24 30 12 39M24 30 36 39" fill="none" stroke="#2f7475" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="11" cy="10" r="3" fill="#2f7475"/><circle cx="37" cy="10" r="3" fill="#2f7475"/>
+              </svg>
+              <span class="g-label">g<sub>4</sub></span>
+            </div>
+          </div>
+
+          <div class="v-arrow"></div>
+
+          <div class="biomarker-card">
+            <span class="bio-label">B<sub>i</sub>, R<sub>i</sub></span>
+            <svg viewBox="0 0 64 56" aria-hidden="true">
+              <path d="M3 30h10l5-14 8 29 8-24 7 9h20" fill="none" stroke="#173f67" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg viewBox="0 0 64 56" aria-hidden="true">
+              <path d="M23 6h18M26 6v8l-6 31h24l-6-31V6" fill="none" stroke="#173f67" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M23 35h18" stroke="#b87422" stroke-width="7"/>
+            </svg>
+            <svg viewBox="0 0 64 56" aria-hidden="true">
+              <ellipse cx="32" cy="29" rx="22" ry="15" fill="none" stroke="#173f67" stroke-width="3"/>
+              <path d="M12 29h40M32 14v30" stroke="#173f67" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+      </article>
+
+      <div class="flow-arrow" aria-hidden="true"></div>
+
+      <article class="panel query">
+        <div class="stage-head"><span class="stage">2 · QUERY</span><span class="aim">AIM 1</span></div>
+        <div class="twins">
+          <div class="twin-card">
+            <div class="world-symbol">ω</div>
+            <svg class="twin-person" viewBox="0 0 95 95" aria-hidden="true">
+              <circle cx="47.5" cy="22" r="13" fill="none" stroke="#182736" stroke-width="4"/>
+              <path d="M22 83V68c0-17 11-28 25.5-28S73 51 73 68v15" fill="none" stroke="#182736" stroke-width="4" stroke-linecap="round"/>
+              <path d="M34 82V65M61 82V65" fill="none" stroke="#182736" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            <div class="observed-evidence">X<sub>i</sub>, B<sub>i</sub>, R<sub>i</sub><br />→ U<sub>i</sub></div>
+          </div>
+
+          <div class="u-chain"><span>same U<sub>i</sub></span></div>
+
+          <div class="twin-card cf">
+            <div class="world-symbol cf">ω<sup>cf</sup></div>
+            <svg class="twin-person" viewBox="0 0 95 95" aria-hidden="true">
+              <circle cx="47.5" cy="22" r="13" fill="none" stroke="#2f7475" stroke-width="4"/>
+              <path d="M22 83V68c0-17 11-28 25.5-28S73 51 73 68v15" fill="none" stroke="#2f7475" stroke-width="4" stroke-linecap="round"/>
+              <path d="M34 82V65M61 82V65" fill="none" stroke="#2f7475" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+
+            <div class="switch-grid">
+              <div class="switch-card">
+                <div class="toggle"><span></span></div>
+                <div>
+                  <div class="do-symbol">do(g<sub>k</sub>=1)</div>
+                  <div class="cf-output">B<sub>i</sub><sup>cf,+k</sup></div>
+                </div>
+              </div>
+              <div class="switch-card">
+                <div class="toggle off"><span></span></div>
+                <div>
+                  <div class="do-symbol">do(g<sub>k</sub>=0)</div>
+                  <div class="cf-output">B<sub>i</sub><sup>cf,−k</sup></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-box">
+              suff<sub>k</sub> = sim(B<sub>i</sub>, B<sub>i</sub><sup>cf,+k</sup>)<br />
+              disab<sub>k</sub> = Δ(B<sub>i</sub>, B<sub>i</sub><sup>cf,−k</sup>)
+            </div>
+            <div class="no-z"><span class="slash"></span>do(Z<sub>i</sub>)</div>
+          </div>
+        </div>
+      </article>
+
+      <div class="flow-arrow" aria-hidden="true"></div>
+
+      <article class="panel test">
+        <div class="stage-head"><span class="stage">3 · FREEZE → TEST</span><span class="aim">AIM 2</span></div>
+        <div class="score-stage">
+          <div class="score-visual">
+            <div class="gauge">
+              <svg viewBox="0 0 220 170" aria-hidden="true">
+                <path d="M24 128a87 87 0 0 1 172 0" fill="none" stroke="#d6dce1" stroke-width="21"/>
+                <path d="M24 128a87 87 0 0 1 95-84" fill="none" stroke="#2f7475" stroke-width="21"/>
+                <path d="M119 44a87 87 0 0 1 77 84" fill="none" stroke="#b87422" stroke-width="21"/>
+                <line x1="110" y1="128" x2="158" y2="79" stroke="#182736" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="110" cy="128" r="9" fill="#182736"/>
+                <path d="M141 57h33" stroke="#182736" stroke-width="3"/>
+                <path d="M141 50v14M174 50v14" stroke="#182736" stroke-width="3"/>
+              </svg>
+              <div class="score-label">S<sub>i</sub> ± u<sub>i</sub></div>
+            </div>
+            <svg class="lock" viewBox="0 0 96 112" aria-hidden="true">
+              <rect x="12" y="45" width="72" height="57" rx="7" fill="#ffffff" stroke="#b87422" stroke-width="5"/>
+              <path d="M29 45V30a19 19 0 0 1 38 0v15" fill="none" stroke="#b87422" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="48" cy="71" r="7" fill="#182736"/>
+              <path d="M48 77v12" stroke="#182736" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="freeze-line"></div>
+
+          <div class="trial-visual">
+            <div class="trial-equation">
+              <div class="trial-node">T<sub>i</sub></div>
+              <div class="trial-symbol">×</div>
+              <div class="trial-node score">S<sub>i</sub></div>
+              <div class="trial-symbol">→</div>
+              <div class="trial-node">Y<sub>i</sub></div>
+            </div>
+
+            <div class="ci-and-events">
+              <div class="ci-plot">
+                <svg viewBox="0 0 160 80" aria-hidden="true">
+                  <line x1="80" y1="8" x2="80" y2="72" stroke="#aab5bf" stroke-width="2" stroke-dasharray="5 4"/>
+                  <line x1="30" y1="40" x2="126" y2="40" stroke="#182736" stroke-width="4"/>
+                  <line x1="30" y1="29" x2="30" y2="51" stroke="#182736" stroke-width="4"/>
+                  <line x1="126" y1="29" x2="126" y2="51" stroke="#182736" stroke-width="4"/>
+                  <circle cx="94" cy="40" r="8" fill="#b87422"/>
+                  <text x="8" y="17" font-family="Times New Roman" font-size="16" fill="#182736">CI</text>
+                </svg>
+              </div>
+              <div class="event-calc">N<sub>events</sub><sup>*</sup><br />→ R01</div>
+            </div>
+          </div>
+
+          <div class="rx-boundary"><span class="no-rx">Rx</span><span>Treatment guidance</span></div>
+        </div>
+      </article>
+    </section>
+
+    <footer class="legend">
+      <div class="legend-item">
+        <div class="legend-math">Z<sub>i</sub></div>
+        <div class="legend-text">one categorical regime<br />posterior = uncertainty</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-math">g<sub>k</sub></div>
+        <div class="legend-text">mechanism / edge gate<br />counterfactual target</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-math">⊘ Y</div>
+        <div class="legend-text">outcome-blind fitting<br />reveal after score freeze</div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

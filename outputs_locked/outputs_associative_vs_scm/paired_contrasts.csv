@@ -1,0 +1,17 @@
+strength_index,renal_effect_sd,metric,contrast,n_repeats,mean_difference,ci_low,ci_high
+0,0.0,false_atrial_confounded_competing,associative_minus_scm_biomarkers_only,500,0.038107441128045635,0.03657990332598534,0.03963497893010593
+0,0.0,false_atrial_confounded_competing,associative_minus_scm_kidney_adjusted,500,-2.3753641796273567e-05,-0.0005161566773457932,0.0004686493937532461
+0,0.0,true_mechanism_accuracy,scm_minus_biomarkers_only,500,0.001317999999999997,0.0008794937961210551,0.0017565062038789386
+0,0.0,true_mechanism_accuracy,scm_minus_kidney_adjusted,500,0.0001779999999999986,-6.457230321204216e-06,0.0003624572303212014
+1,0.75,false_atrial_confounded_competing,associative_minus_scm_biomarkers_only,500,0.13392991264997225,0.13136038475296125,0.13649944054698326
+1,0.75,false_atrial_confounded_competing,associative_minus_scm_kidney_adjusted,500,0.00033381930700634977,-0.00015866074798430517,0.0008262993619970047
+1,0.75,true_mechanism_accuracy,scm_minus_biomarkers_only,500,0.012615999999999978,0.011831741256226372,0.013400258743773584
+1,0.75,true_mechanism_accuracy,scm_minus_kidney_adjusted,500,5.6000000000000494e-05,-0.00011283527943655648,0.00022483527943655747
+2,1.5,false_atrial_confounded_competing,associative_minus_scm_biomarkers_only,500,0.205929352044783,0.20317356455914035,0.20868513953042564
+2,1.5,false_atrial_confounded_competing,associative_minus_scm_kidney_adjusted,500,0.00038387814213503257,-0.00016084009279681248,0.0009285963770668776
+2,1.5,true_mechanism_accuracy,scm_minus_biomarkers_only,500,0.02949399999999998,0.028558406156201675,0.030429593843798283
+2,1.5,true_mechanism_accuracy,scm_minus_kidney_adjusted,500,4.799999999999982e-05,-0.00012294876682962853,0.00021894876682962815
+3,2.25,false_atrial_confounded_competing,associative_minus_scm_biomarkers_only,500,0.23522611444248995,0.2322070740228535,0.23824515486212638
+3,2.25,false_atrial_confounded_competing,associative_minus_scm_kidney_adjusted,500,0.0004650032470819869,-2.113260090517592e-05,0.0009511390950691498
+3,2.25,true_mechanism_accuracy,scm_minus_biomarkers_only,500,0.04441399999999999,0.0433370735898876,0.045490926410112376
+3,2.25,true_mechanism_accuracy,scm_minus_kidney_adjusted,500,4.9999999999998715e-05,-0.0001333885701776378,0.00023338857017763523

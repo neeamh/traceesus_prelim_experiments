@@ -1,0 +1,136 @@
+{
+  "experiment_config": {
+    "master_seed": 20260728,
+    "repeats": 500,
+    "workers": 4,
+    "equivalence_margin_accuracy": 0.01,
+    "simulation": {
+      "source_patients_per_hospital": 600,
+      "target_calibration_patients": 150,
+      "target_test_patients": 1000,
+      "atrial_probability": 0.5,
+      "atrial_path_effects_sd": [
+        1.25,
+        1.0,
+        0.0
+      ],
+      "competing_path_effects_sd": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "biomarker_noise_sd": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "renal_missingness_log_odds_nt": -0.6,
+      "inflammation_missingness_log_odds_competing": -0.6,
+      "assay_metadata_known": true
+    },
+    "fitting": {
+      "random_starts": 4,
+      "maximum_em_iterations": 300,
+      "relative_log_likelihood_tolerance": 1e-06,
+      "variance_floor": 0.0025000000000000005,
+      "probability_floor": 1e-05,
+      "beta_prior_pseudocount": 0.5,
+      "minimum_effective_class_fraction": 0.02,
+      "calibration_bins": 10
+    },
+    "source_hospitals": [
+      {
+        "name": "Identical source A",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      },
+      {
+        "name": "Identical source B",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      },
+      {
+        "name": "Identical source C",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      }
+    ],
+    "target_hospitals": [
+      {
+        "name": "Exact no shift",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      }
+    ]
+  },
+  "purpose": "Literal no-shift negative control: all source and target hospitals share identical generating parameters.",
+  "truth_usage": "True mechanism labels are used only after prediction for simulation evaluation."
+}

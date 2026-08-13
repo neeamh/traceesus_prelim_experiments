@@ -1,0 +1,8 @@
+{
+  "comparison": "modular causal minus target-calibrated associative",
+  "margin": 0.01,
+  "mean_difference": 0.0037799999999999813,
+  "ci95_low": 0.0018789263054401852,
+  "ci95_high": 0.005681073694559778,
+  "ci_entirely_within_equivalence_margin": true
+}

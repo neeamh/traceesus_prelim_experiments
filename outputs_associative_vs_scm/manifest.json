@@ -1,0 +1,49 @@
+{
+  "experiment": "model_comparison",
+  "config": {
+    "seed": 20260729,
+    "training_patients": 3000,
+    "test_patients": 1000,
+    "repeats_per_level": 500,
+    "confounding_strengths_sd": [
+      0.0,
+      0.75,
+      1.5,
+      2.25
+    ],
+    "confounding_labels": [
+      "None\n(0 SD)",
+      "Weak\n(0.75 SD)",
+      "Moderate\n(1.50 SD)",
+      "Strong\n(2.25 SD)"
+    ],
+    "logistic_l2_penalty": 1.0,
+    "logistic_max_iter": 50,
+    "logistic_tolerance": 1e-08,
+    "scm_prior_smoothing": 0.5,
+    "variance_floor": 1e-06,
+    "counterfactual_disablement_weight": 0.5,
+    "counterfactual_sufficiency_weight": 0.5
+  },
+  "master_seed": 20260729,
+  "package_version": "0.1.0",
+  "git_commit": null,
+  "git_state": "no_repository",
+  "package_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "wall_clock_runtime_seconds": 206.28428987506777,
+  "output_file_sha256": {
+    "figure_P1_associative_vs_scm.pdf": "b827c952865d85b2caebc6f2a8217937604d51b24be68ebfd9c7d52717d1dd08",
+    "figure_P1_associative_vs_scm.png": "4be7f8c92ca11a6c4d4190e42d1296f226dc50f713d54bfbffadebc6d1214093",
+    "fit_diagnostics.csv": "0420c17de942c13d8dd181fcc93b27d23bc9a8bec3cc9b567567921ef1288d3f",
+    "metadata.json": "5261c10bbfdd9a8df0cee905f08e5c84c19e2532decc089a263b175f1f4add49",
+    "paired_contrasts.csv": "143ab389145b1f28e1f8cdfcb2dd50eccef2ec637a75d5900600de34ed67710d",
+    "raw_metrics.csv": "9deb222529ddeb070f8bb491b8ea112b4c655f0e0167db49573532f2bb926e8d",
+    "summary.csv": "730796200c62863bd0945b25a9f442d25ddc5af74a75400aebf64a4d85f399b8"
+  }
+}

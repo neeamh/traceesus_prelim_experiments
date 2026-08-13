@@ -1,0 +1,84 @@
+{
+  "experiment": "endotype_discovery",
+  "config": {
+    "master_seed": 20260728,
+    "repeats_per_level": 500,
+    "null_repeats": 500,
+    "null_renal_effect_sd": 1.5,
+    "workers": 4,
+    "simulation": {
+      "training_patients": 800,
+      "test_patients": 1000,
+      "renal_dysfunction_prevalence": 0.3,
+      "atrial_probability_if_renal_normal": 0.5,
+      "atrial_probability_if_renal_impaired": 0.5,
+      "atrial_path_effects_sd": [
+        1.25,
+        1.0,
+        0.0
+      ],
+      "competing_path_effects_sd": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "biomarker_noise_sd": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "renal_effect_levels_sd": [
+        0.0,
+        0.5,
+        1.0,
+        1.5
+      ],
+      "renal_effect_labels": [
+        "None",
+        "Weak",
+        "Moderate",
+        "Strong"
+      ]
+    },
+    "fitting": {
+      "random_starts": 4,
+      "maximum_em_iterations": 300,
+      "relative_log_likelihood_tolerance": 1e-06,
+      "variance_floor": 0.0025000000000000005,
+      "probability_floor": 1e-05,
+      "beta_prior_pseudocount": 0.5,
+      "minimum_effective_class_fraction": 0.02,
+      "calibration_bins": 10
+    }
+  },
+  "master_seed": 20260728,
+  "package_version": "0.1.0",
+  "git_commit": null,
+  "git_state": "no_repository",
+  "package_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "wall_clock_runtime_seconds": 515.0770662908908,
+  "output_file_sha256": {
+    "example_patient.json": "202905ba437d25abf87cf05f3e9c3034fc1d51a7c2ea9ebf22a4e583a361842b",
+    "figure_P1_latent_recovery.pdf": "db03ef32c384f0e5a3f5314e9577e13a543807cc712a415b27b43551576d6b1e",
+    "figure_P1_latent_recovery.png": "58b382a811f3edba15600f3a6f872fd9133bd90a55b87948b57d79a56f330e54",
+    "figure_P2_example_patient.pdf": "154e1358e037a6a7cea3f44b2612ca6ae45c37aafa4ceee9952fd5744eba64e3",
+    "figure_P2_example_patient.png": "3a69327e876c90f9be47a467564159d7fe82607fa2b4c87d7a79610a8844693e",
+    "figure_S1_controls.pdf": "76330effab8d87c161386e419bcc0145aa349eb3cd9da02257a9d1077486e88d",
+    "figure_S1_controls.png": "fc611f8c126d8e6a5c7c0ef321873da715eff276d57b70cb370350bc91922130",
+    "fit_diagnostics.csv": "a1bc2cb2b2948bf9ab45f659f54d8b8d520fafd68c567387e6afbd20dab28645",
+    "k1_null_raw.csv": "9fb7c596fdf63d2c8b83e6a006ed7cda6c5cc36b638f359d8eb21740cf32f667",
+    "k1_null_summary.csv": "b1fce338b96c7df7e100527439ed67c304fd02fff023526ab223f389535faaa5",
+    "metadata.json": "8bd9730ba5fb0efa2bc2949d941cf5c5748b27b0b5b22285e09b341b176ed01f",
+    "paired_contrasts.csv": "913cc55d5230caeae0e61cae1d1730d8c67fc44c5f16c1562319ef1d66e36183",
+    "parameter_recovery.csv": "471c6f9927df83d37a6018f061dc8d6d9aefba04f0248a43615d9bab4c76ad7c",
+    "raw_recovery_metrics.csv": "091aa55e527254c829baa143106dcd822fec8bff91294c061a36fc84b88c3fbf",
+    "recovery_summary.csv": "54780018eb66acbef60b8a10b5c53dd6bc24680e8bddcf2f7797b7f82603f0ea",
+    "validation_checks.json": "c334c94688d7c2e921e599663866460c845d65b4f02d8e1f42e60e9093f3d495"
+  }
+}
