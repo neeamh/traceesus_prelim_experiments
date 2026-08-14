@@ -1,0 +1,74 @@
+{
+  "experiment": "counterfactual",
+  "config": {
+    "seed": 20260728,
+    "patients_per_repeat": 1000,
+    "repeats_per_level": 500,
+    "renal_prevalence": 0.3,
+    "atrial_log_odds_when_renal_normal": 0.0,
+    "renal_to_atrial_log_odds": -0.4,
+    "confounding_strengths_sd": [
+      0.0,
+      0.75,
+      1.5,
+      2.25
+    ],
+    "confounding_labels": [
+      "None\n(0 SD)",
+      "Weak\n(0.75 SD)",
+      "Moderate\n(1.50 SD)",
+      "Strong\n(2.25 SD)"
+    ],
+    "mechanism_effects": [
+      [
+        1.2,
+        0.8,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "biomarker_noise_sd": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "counterfactual_disablement_weight": 0.5,
+    "counterfactual_sufficiency_weight": 0.5,
+    "null_repeats": 500,
+    "null_patients_per_repeat": 1000,
+    "null_renal_effect_sd": 2.25,
+    "null_gmm_starts": 5,
+    "null_gmm_max_iter": 400,
+    "null_min_component_weight": 0.1,
+    "gmm_variance_floor": 0.05
+  },
+  "master_seed": 20260728,
+  "package_version": "0.1.0",
+  "git_commit": "5423e047073ad496896064c7b8ac3989143290b4",
+  "git_state": "available",
+  "package_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "wall_clock_runtime_seconds": 38.22338875000423,
+  "output_file_sha256": {
+    "counterfactual_contrasts.csv": "5379a3dbaa7b2d55dd8fca3f9f207203e3052b27814b3b3398316f371ae6918c",
+    "counterfactual_raw_long.csv": "50b7f6bce64c5e1c5ac8dd7958e85efe114a34addba5a880916f19d72cdc1197",
+    "counterfactual_summary.csv": "2ac5607481b4434ec9f47a6265c62653606da6f561a8ab197b717e7ce8ccc8ff",
+    "data_dictionary.csv": "69c0a3b5b478afcb279ed99f1e431c55fd3ecfef88c8071cbbfc26e618921428",
+    "k1_null_raw_results.csv": "2a8132e52d483cf616783f06ec7f7d4f0a5d95ea544cabc3973ff78a1c71d3b9",
+    "k1_null_summary.csv": "d169edd391ae50fb0de40fff2f60b8ae9a37ea48f269a1ce6e25991b7d7a87e8",
+    "main_simulation_raw_metrics.csv": "099060f7b872d3fef78e59197fec4f01a3241c69c24157715d0013aea0f2130b",
+    "main_simulation_summary.csv": "cde273c118a3f3a823320b8bad2f8f825617229ee225ca3c5a98f31b46fd51ce",
+    "metadata.json": "35813b990671ea1b9107d2b7ea0333bb74773aa85a40aaa701dc7a774ba72007",
+    "paired_method_differences.csv": "82152a4d5a2b2248d241eacceb2cd8e2458f183b25b23b07296d0121352720ea",
+    "run_metadata.json": "35813b990671ea1b9107d2b7ea0333bb74773aa85a40aaa701dc7a774ba72007"
+  }
+}

@@ -1,0 +1,73 @@
+shift_index,shift,metric,contrast,mean_difference,ci95_low,ci95_high,repeat_count
+0,No shift,accuracy,modular causal minus comparator: Pooled associative latent class model,0.01286799999999997,0.01204150704555054,0.013694492954449399,500
+0,No shift,adjusted_rand_index,modular causal minus comparator: Pooled associative latent class model,0.03173829264856827,0.029706793917553796,0.03376979137958275,500
+0,No shift,false_atrial_renal_competing,modular causal minus comparator: Pooled associative latent class model,-0.12871553991085982,-0.13333221762219685,-0.12409886219952278,500
+0,No shift,brier_score,modular causal minus comparator: Pooled associative latent class model,-0.008283982080277273,-0.00858459210204998,-0.007983372058504567,500
+0,No shift,expected_calibration_error,modular causal minus comparator: Pooled associative latent class model,-0.001043309500928214,-0.0020689379048627293,-1.7681096993698523e-05,500
+0,No shift,accuracy_any_missing,modular causal minus comparator: Pooled associative latent class model,0.011210596484240788,0.009191133254320066,0.01323005971416151,500
+0,No shift,accuracy,modular causal minus comparator: Target-calibrated associative latent model,0.002989999999999992,0.002466031888311137,0.0035139681116888467,500
+0,No shift,adjusted_rand_index,modular causal minus comparator: Target-calibrated associative latent model,0.007442878405144618,0.006133653796004451,0.008752103014284786,500
+0,No shift,false_atrial_renal_competing,modular causal minus comparator: Target-calibrated associative latent model,-0.005794515700208564,-0.010080891199410878,-0.0015081402010062488,500
+0,No shift,brier_score,modular causal minus comparator: Target-calibrated associative latent model,-0.0019602717864872646,-0.0022024346976125607,-0.0017181088753619683,500
+0,No shift,expected_calibration_error,modular causal minus comparator: Target-calibrated associative latent model,-0.004004450264701189,-0.0049146838536591655,-0.0030942166757432117,500
+0,No shift,accuracy_any_missing,modular causal minus comparator: Target-calibrated associative latent model,0.0018720045662369328,0.000776223178628454,0.0029677859538454116,500
+0,No shift,accuracy,modular causal minus comparator: Frozen causal latent SCM,-0.0007859999999999994,-0.0011326322866460304,-0.0004393677133539683,500
+0,No shift,adjusted_rand_index,modular causal minus comparator: Frozen causal latent SCM,-0.0019835903733790706,-0.002860019336213877,-0.001107161410544264,500
+0,No shift,false_atrial_renal_competing,modular causal minus comparator: Frozen causal latent SCM,-0.0032253814654109405,-0.006615493925729645,0.0001647309949077639,500
+0,No shift,brier_score,modular causal minus comparator: Frozen causal latent SCM,0.000660009220715402,0.0005446261681555976,0.0007753922732752065,500
+0,No shift,expected_calibration_error,modular causal minus comparator: Frozen causal latent SCM,0.0014179166061382435,0.0007548571613810154,0.002080976050895472,500
+0,No shift,accuracy_any_missing,modular causal minus comparator: Frozen causal latent SCM,-1.2503822051506797e-05,-0.0007488792975864891,0.0007238716534834755,500
+1,Mild shift,accuracy,modular causal minus comparator: Pooled associative latent class model,0.020663999999999978,0.01972355225877016,0.021604447741229795,500
+1,Mild shift,adjusted_rand_index,modular causal minus comparator: Pooled associative latent class model,0.049335321813523174,0.04709198270659926,0.051578660920447085,500
+1,Mild shift,false_atrial_renal_competing,modular causal minus comparator: Pooled associative latent class model,-0.16495480084938632,-0.16966478890813733,-0.16024481279063532,500
+1,Mild shift,brier_score,modular causal minus comparator: Pooled associative latent class model,-0.012858856227468468,-0.013237747782914769,-0.012479964672022167,500
+1,Mild shift,expected_calibration_error,modular causal minus comparator: Pooled associative latent class model,-0.003322424096909014,-0.004612856596315521,-0.002031991597502507,500
+1,Mild shift,accuracy_any_missing,modular causal minus comparator: Pooled associative latent class model,0.01868473534555371,0.016907620128836485,0.02046185056227094,500
+1,Mild shift,accuracy,modular causal minus comparator: Target-calibrated associative latent model,0.0032119999999999935,0.00262927953209354,0.0037947204679064472,500
+1,Mild shift,adjusted_rand_index,modular causal minus comparator: Target-calibrated associative latent model,0.007865086870151125,0.006435198321387409,0.00929497541891484,500
+1,Mild shift,false_atrial_renal_competing,modular causal minus comparator: Target-calibrated associative latent model,-0.003788313328621878,-0.007782368023268526,0.00020574136602476882,500
+1,Mild shift,brier_score,modular causal minus comparator: Target-calibrated associative latent model,-0.0021541418223409454,-0.0024379629056652664,-0.0018703207390166243,500
+1,Mild shift,expected_calibration_error,modular causal minus comparator: Target-calibrated associative latent model,-0.004704672105530957,-0.005809140876520933,-0.003600203334540982,500
+1,Mild shift,accuracy_any_missing,modular causal minus comparator: Target-calibrated associative latent model,0.0018894512599467025,0.0010220498617829988,0.002756852658110406,500
+1,Mild shift,accuracy,modular causal minus comparator: Frozen causal latent SCM,0.0003939999999999988,-7.619086814562154e-05,0.0008641908681456191,500
+1,Mild shift,adjusted_rand_index,modular causal minus comparator: Frozen causal latent SCM,0.0009921985282888206,-0.0001632687051911269,0.002147665761768768,500
+1,Mild shift,false_atrial_renal_competing,modular causal minus comparator: Frozen causal latent SCM,-0.046223182754929114,-0.04964473062998761,-0.04280163487987062,500
+1,Mild shift,brier_score,modular causal minus comparator: Frozen causal latent SCM,-6.144080667184135e-05,-0.0002547310305045206,0.0001318494171608379,500
+1,Mild shift,expected_calibration_error,modular causal minus comparator: Frozen causal latent SCM,-0.0003047680193424032,-0.0013979557170334935,0.0007884196783486871,500
+1,Mild shift,accuracy_any_missing,modular causal minus comparator: Frozen causal latent SCM,0.0009698662358589212,0.00015194641734741783,0.0017877860543704244,500
+2,Moderate shift,accuracy,modular causal minus comparator: Pooled associative latent class model,0.029324000000000013,0.028193879580334924,0.030454120419665102,500
+2,Moderate shift,adjusted_rand_index,modular causal minus comparator: Pooled associative latent class model,0.06589140740190674,0.06336245032251783,0.06842036448129565,500
+2,Moderate shift,false_atrial_renal_competing,modular causal minus comparator: Pooled associative latent class model,-0.1972325396027216,-0.20215539280216646,-0.19230968640327675,500
+2,Moderate shift,brier_score,modular causal minus comparator: Pooled associative latent class model,-0.018351236908913052,-0.018851138164486584,-0.01785133565333952,500
+2,Moderate shift,expected_calibration_error,modular causal minus comparator: Pooled associative latent class model,-0.012338546431226005,-0.01422444738657431,-0.0104526454758777,500
+2,Moderate shift,accuracy_any_missing,modular causal minus comparator: Pooled associative latent class model,0.027275118956655468,0.025659021128466426,0.02889121678484451,500
+2,Moderate shift,accuracy,modular causal minus comparator: Target-calibrated associative latent model,0.004082,0.00337131025753559,0.0047926897424644095,500
+2,Moderate shift,adjusted_rand_index,modular causal minus comparator: Target-calibrated associative latent model,0.009455758086392176,0.007809313815120549,0.011102202357663803,500
+2,Moderate shift,false_atrial_renal_competing,modular causal minus comparator: Target-calibrated associative latent model,-0.004855469755850818,-0.00922688484824388,-0.00048405466345775514,500
+2,Moderate shift,brier_score,modular causal minus comparator: Target-calibrated associative latent model,-0.0027961742169979797,-0.0031668837193976483,-0.002425464714598311,500
+2,Moderate shift,expected_calibration_error,modular causal minus comparator: Target-calibrated associative latent model,-0.007477284661735403,-0.008840799858974699,-0.006113769464496108,500
+2,Moderate shift,accuracy_any_missing,modular causal minus comparator: Target-calibrated associative latent model,0.002902186655065026,0.002063339464105672,0.00374103384602438,500
+2,Moderate shift,accuracy,modular causal minus comparator: Frozen causal latent SCM,0.00413,0.0033835194063186786,0.004876480593681322,500
+2,Moderate shift,adjusted_rand_index,modular causal minus comparator: Frozen causal latent SCM,0.00966073447023406,0.007915849217673684,0.011405619722794438,500
+2,Moderate shift,false_atrial_renal_competing,modular causal minus comparator: Frozen causal latent SCM,-0.09357976976153294,-0.09735846943068553,-0.08980107009238035,500
+2,Moderate shift,brier_score,modular causal minus comparator: Frozen causal latent SCM,-0.002805697243537955,-0.0031531978970111355,-0.002458196590064774,500
+2,Moderate shift,expected_calibration_error,modular causal minus comparator: Frozen causal latent SCM,-0.0070631060922138654,-0.008893227070073353,-0.0052329851143543766,500
+2,Moderate shift,accuracy_any_missing,modular causal minus comparator: Frozen causal latent SCM,0.0035884257311223165,0.0025877382230139754,0.0045891132392306576,500
+3,Strong shift,accuracy,modular causal minus comparator: Pooled associative latent class model,0.042304000000000036,0.041052773832100625,0.04355522616789945,500
+3,Strong shift,adjusted_rand_index,modular causal minus comparator: Pooled associative latent class model,0.08617151251431954,0.08363995218575242,0.08870307284288666,500
+3,Strong shift,false_atrial_renal_competing,modular causal minus comparator: Pooled associative latent class model,-0.22209469015734237,-0.22748355379576396,-0.21670582651892079,500
+3,Strong shift,brier_score,modular causal minus comparator: Pooled associative latent class model,-0.026134118098032167,-0.02681390050517015,-0.025454335690894184,500
+3,Strong shift,expected_calibration_error,modular causal minus comparator: Pooled associative latent class model,-0.029679206045969152,-0.031838217136886886,-0.027520194955051414,500
+3,Strong shift,accuracy_any_missing,modular causal minus comparator: Pooled associative latent class model,0.04016101122138931,0.0386964284107316,0.04162559403204703,500
+3,Strong shift,accuracy,modular causal minus comparator: Target-calibrated associative latent model,0.004654000000000004,0.0038244627295420035,0.005483537270458003,500
+3,Strong shift,adjusted_rand_index,modular causal minus comparator: Target-calibrated associative latent model,0.010039207037428948,0.00826059013048349,0.011817823944374407,500
+3,Strong shift,false_atrial_renal_competing,modular causal minus comparator: Target-calibrated associative latent model,-0.008469313322186141,-0.013266607683409839,-0.003672018960962445,500
+3,Strong shift,brier_score,modular causal minus comparator: Target-calibrated associative latent model,-0.003082719877591671,-0.0034977979088183734,-0.0026676418463649687,500
+3,Strong shift,expected_calibration_error,modular causal minus comparator: Target-calibrated associative latent model,-0.007721947027942475,-0.009455406788648939,-0.005988487267236012,500
+3,Strong shift,accuracy_any_missing,modular causal minus comparator: Target-calibrated associative latent model,0.003453633641117759,0.0026329183840550704,0.004274348898180447,500
+3,Strong shift,accuracy,modular causal minus comparator: Frozen causal latent SCM,0.01421000000000001,0.013263702290508366,0.015156297709491656,500
+3,Strong shift,adjusted_rand_index,modular causal minus comparator: Frozen causal latent SCM,0.03042709822919295,0.02840554353869274,0.032448652919693156,500
+3,Strong shift,false_atrial_renal_competing,modular causal minus comparator: Frozen causal latent SCM,-0.14083465520117605,-0.14519352331628424,-0.13647578708606786,500
+3,Strong shift,brier_score,modular causal minus comparator: Frozen causal latent SCM,-0.009302155443674678,-0.009807328859946948,-0.008796982027402409,500
+3,Strong shift,expected_calibration_error,modular causal minus comparator: Frozen causal latent SCM,-0.024609604174934758,-0.02690076281318525,-0.022318445536684266,500
+3,Strong shift,accuracy_any_missing,modular causal minus comparator: Frozen causal latent SCM,0.012454746879585378,0.0113657821487898,0.013543711610380956,500

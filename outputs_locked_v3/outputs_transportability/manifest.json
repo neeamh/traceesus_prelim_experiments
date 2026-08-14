@@ -1,0 +1,243 @@
+{
+  "experiment": "transportability",
+  "config": {
+    "master_seed": 20260728,
+    "repeats": 500,
+    "workers": 4,
+    "equivalence_margin_accuracy": 0.01,
+    "simulation": {
+      "source_patients_per_hospital": 600,
+      "target_calibration_patients": 150,
+      "target_test_patients": 1000,
+      "atrial_probability": 0.5,
+      "atrial_path_effects_sd": [
+        1.25,
+        1.0,
+        0.0
+      ],
+      "competing_path_effects_sd": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "biomarker_noise_sd": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "renal_missingness_log_odds_nt": -0.6,
+      "inflammation_missingness_log_odds_competing": -0.6,
+      "assay_metadata_known": true
+    },
+    "fitting": {
+      "random_starts": 4,
+      "maximum_em_iterations": 300,
+      "relative_log_likelihood_tolerance": 1e-06,
+      "variance_floor": 0.0025000000000000005,
+      "probability_floor": 1e-05,
+      "beta_prior_pseudocount": 0.5,
+      "minimum_effective_class_fraction": 0.02,
+      "calibration_bins": 10
+    },
+    "source_hospitals": [
+      {
+        "name": "Source A",
+        "renal_prevalence": 0.25,
+        "renal_effect_nt_sd": 0.8,
+        "inflammation_prevalence": 0.2,
+        "inflammation_effect_competing_sd": 0.7,
+        "assay_offset": [
+          -0.1,
+          0.05,
+          0.0
+        ],
+        "assay_scale": [
+          0.98,
+          1.02,
+          1.0
+        ],
+        "missingness_base": [
+          0.05,
+          0.04,
+          0.05
+        ]
+      },
+      {
+        "name": "Source B",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      },
+      {
+        "name": "Source C",
+        "renal_prevalence": 0.35,
+        "renal_effect_nt_sd": 1.2,
+        "inflammation_prevalence": 0.3,
+        "inflammation_effect_competing_sd": 0.9,
+        "assay_offset": [
+          0.1,
+          -0.05,
+          0.05
+        ],
+        "assay_scale": [
+          1.02,
+          0.98,
+          1.03
+        ],
+        "missingness_base": [
+          0.09,
+          0.06,
+          0.08
+        ]
+      }
+    ],
+    "target_hospitals": [
+      {
+        "name": "No shift",
+        "renal_prevalence": 0.3,
+        "renal_effect_nt_sd": 1.0,
+        "inflammation_prevalence": 0.25,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "assay_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "missingness_base": [
+          0.07,
+          0.05,
+          0.06
+        ]
+      },
+      {
+        "name": "Mild shift",
+        "renal_prevalence": 0.4,
+        "renal_effect_nt_sd": 1.25,
+        "inflammation_prevalence": 0.35,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.15,
+          -0.1,
+          0.08
+        ],
+        "assay_scale": [
+          1.05,
+          0.98,
+          1.03
+        ],
+        "missingness_base": [
+          0.12,
+          0.1,
+          0.1
+        ]
+      },
+      {
+        "name": "Moderate shift",
+        "renal_prevalence": 0.5,
+        "renal_effect_nt_sd": 1.5,
+        "inflammation_prevalence": 0.45,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.3,
+          -0.2,
+          0.16
+        ],
+        "assay_scale": [
+          1.1,
+          0.96,
+          1.06
+        ],
+        "missingness_base": [
+          0.22,
+          0.18,
+          0.17
+        ]
+      },
+      {
+        "name": "Strong shift",
+        "renal_prevalence": 0.6,
+        "renal_effect_nt_sd": 1.8,
+        "inflammation_prevalence": 0.55,
+        "inflammation_effect_competing_sd": 0.8,
+        "assay_offset": [
+          0.45,
+          -0.3,
+          0.24
+        ],
+        "assay_scale": [
+          1.15,
+          0.94,
+          1.09
+        ],
+        "missingness_base": [
+          0.35,
+          0.3,
+          0.28
+        ]
+      }
+    ]
+  },
+  "master_seed": 20260728,
+  "package_version": "0.1.0",
+  "git_commit": "5423e047073ad496896064c7b8ac3989143290b4",
+  "git_state": "available",
+  "package_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "wall_clock_runtime_seconds": 287.1922153750056,
+  "output_file_sha256": {
+    "ablations/ablation_accuracy_changes.csv": "83eb2e9e8df27162fbe0afec94c3cea7789243fe20c10959d0267602a7e82b9b",
+    "ablations/ablation_summary.csv": "57974999636dfd343cf661990ccb10d0902774e9761dea7d6763f48d0d2cfd0a",
+    "ablations/fit_diagnostics.csv": "86ffcef186820fbfb1fae9e13ffeb00a3393df2cd580c1d5683faa3e25f8894b",
+    "ablations/negative_control.json": "2e6f2fbdc6a241d709887049963cf2f4708e63ef5d20e41adaeeae2db50722e1",
+    "ablations/paired_ablation_contrasts.csv": "57ac3a00eb0259c428702674cdd544dd95aac2ef15af48c246ff980ce6a332f3",
+    "ablations/raw_ablation_metrics.csv": "49f4da37b3e37242e8364b521b25728b8a134f5ca42abb3a4bb57813d8808796",
+    "ablations/target_calibration_diagnostics.csv": "7c75478b8d8d9546741b6f217c1b4a2f2fac0db150c10bd66326754e3f57b3a4",
+    "ablations/validation_checks.json": "557ac4db2c74acb355d1cbe7bf7e2cfe0bf51611eb0bee3dcfc662acac6b613b",
+    "exact_no_shift_control/fit_diagnostics.csv": "70fd81e970fbccff03156823ef015cc46eb276b9c7fb5e7b20ebd9f0a7a2fea0",
+    "exact_no_shift_control/metadata.json": "2f40aa792528e16d5e0c334558514b8f9d6cfe453745a639179af691ba383972",
+    "exact_no_shift_control/negative_control.json": "374399382c66d594bba0a1058a02aaa970d4f1f9e1db4ed530902bcda57de17b",
+    "exact_no_shift_control/paired_contrasts.csv": "0b8b90fb5d251845dafe7bd71885f0939ff4407f4558cbbfb010d9cb488b60de",
+    "exact_no_shift_control/raw_metrics.csv": "3958fecf1fc049036f516a6a674c88617886f03c7038f5e608f34c1cb98bd1ee",
+    "exact_no_shift_control/summary.csv": "e4699919536a69f599d3e95e67cc5db64d41235f3832aebeccf7ded3f3bf610a",
+    "exact_no_shift_control/target_calibration_diagnostics.csv": "d7629013fdaa3d6415519cc0e0dd77b8564c5ffb664f8eef8b9dd684c1e14e8b",
+    "exact_no_shift_control/validation_checks.json": "0424d7dc2e9e35508500f01ddfff78ee40d5545a18b954a6576fc71f9a7d89fb",
+    "fit_diagnostics.csv": "86ffcef186820fbfb1fae9e13ffeb00a3393df2cd580c1d5683faa3e25f8894b",
+    "metadata.json": "dca706fa9e43257bdd13f00908ce955d975711ae9fde3198551e7f23d175a3ad",
+    "negative_control.json": "2e6f2fbdc6a241d709887049963cf2f4708e63ef5d20e41adaeeae2db50722e1",
+    "paired_transport_contrasts.csv": "55adfc3ff74ad01c2a6f06b9b937ef54bc2cb2dbe7f11949c6e44340e9f3991e",
+    "raw_transport_metrics.csv": "8e5573cd280b1b8e32cec51e634e1128e54901030c58eaa8a97a1c7db3691f7e",
+    "target_calibration_diagnostics.csv": "2ae3888b8dc1b70e5fe94868394c27fff1b368ffb51f6b266e13f837937c9951",
+    "transport_degradation.csv": "8e2e62e039ddb135767660a68e785dfb1edfb3c3de88bb99912d54482f5ef886",
+    "transport_summary.csv": "d64a586d0cbdeaba273bb57db4f936f08a1c7c899e80803ec19bf8f7f531c6ed",
+    "transportability_contrasts.csv": "3a48cbde8827b3098e24698ea201aaf936b64d8e88d704945361b6be5e380b57",
+    "transportability_raw_long.csv": "2acf664faac7dec787fc32749f424af0695f4098367f948f84836b87aa0fd2bc",
+    "transportability_summary.csv": "8634b5d6ffd9a8aa9607d6d598c3c00735b94983713a84af8c7e09b59ca15a50",
+    "validation_checks.json": "557ac4db2c74acb355d1cbe7bf7e2cfe0bf51611eb0bee3dcfc662acac6b613b"
+  }
+}

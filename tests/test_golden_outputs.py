@@ -1,4 +1,4 @@
-"""Re-run retained experiments against v2 and describe non-failing v1 deltas."""
+"""Re-run retained experiments against v3 and retain non-failing version deltas."""
 
 from __future__ import annotations
 
@@ -26,11 +26,16 @@ from traceesus.experiments.counterfactual import CounterfactualExperiment
 from traceesus.experiments.endotype_discovery import EndotypeDiscoveryExperiment
 from traceesus.experiments.transportability import TransportabilityExperiment
 from scripts.em_unification_delta import build_report, confidence_interval_crossings
+from scripts.conditional_em_unification_delta import (
+    conditional_crossings,
+    conditional_report,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 V1_ROOT = REPOSITORY_ROOT / "outputs_locked"
 V2_ROOT = REPOSITORY_ROOT / "outputs_locked_v2"
+V3_ROOT = REPOSITORY_ROOT / "outputs_locked_v3"
 
 
 @dataclass(frozen=True)
@@ -137,7 +142,7 @@ def golden_run(
     candidate = run_root / specification.output_directory
     specification.experiment_type(specification.config, candidate).execute()
     return (
-        V2_ROOT / specification.output_directory,
+        V3_ROOT / specification.output_directory,
         candidate,
     )
 
@@ -145,7 +150,7 @@ def golden_run(
 def test_every_output_csv_matches_locked_exactly(
     golden_run: tuple[Path, Path],
 ) -> None:
-    """Require every generated CSV to match the unified-EM v2 baseline exactly."""
+    """Require every generated CSV to match the conditional-EM v3 baseline exactly."""
 
     locked, candidate = golden_run
     locked_csvs = _relative_csvs(locked)
@@ -189,6 +194,33 @@ def test_v1_to_v2_deltas_are_reported_without_failing(
     assert common
 
 
+@pytest.mark.parametrize("specification", EXPERIMENTS, ids=lambda item: item.name)
+def test_v2_to_v3_deltas_are_reported_without_failing(
+    specification: ExperimentSpecification,
+) -> None:
+    """Report exact common-table deltas while retaining v2 as provenance."""
+
+    v2 = V2_ROOT / specification.output_directory
+    v3 = V3_ROOT / specification.output_directory
+    common = sorted(set(_relative_csvs(v2)) & set(_relative_csvs(v3)))
+    changed = 0
+    comparable = 0
+    for relative_path in common:
+        before = pd.read_csv(v2 / relative_path)
+        after = pd.read_csv(v3 / relative_path)
+        if before.shape != after.shape or list(before.columns) != list(after.columns):
+            print(f"{specification.name}: {relative_path}: schema changed")
+            continue
+        equal = (before == after) | (before.isna() & after.isna())
+        changed += int((~equal).to_numpy().sum())
+        comparable += int(equal.size)
+    print(
+        f"{specification.name}: v2_to_v3_changed_cells={changed}; "
+        f"comparable_cells={comparable}; common_csvs={len(common)}"
+    )
+    assert common
+
+
 def test_em_delta_report_is_reproducible_and_has_no_scientific_crossing() -> None:
     """Recompute the primary audit and enforce its reviewed decision-level findings."""
 
@@ -201,3 +233,17 @@ def test_em_delta_report_is_reproducible_and_has_no_scientific_crossing() -> Non
     assert actual["absolute_difference"].max() == 4.583000645652646e-13
     assert not actual["changes_at_reported_precision"].any()
     assert confidence_interval_crossings().empty
+
+
+def test_conditional_em_delta_report_is_exact_and_has_no_scientific_crossing() -> None:
+    """Recompute the v2-to-v3 audit and enforce its decision-level findings."""
+
+    actual = conditional_report()
+    expected_text = (
+        REPOSITORY_ROOT / "reports" / "conditional_em_unification_delta.csv"
+    ).read_text(encoding="utf-8")
+    assert actual.to_csv(index=False) == expected_text
+    assert int(actual["absolute_difference"].gt(0.0).sum()) == 0
+    assert actual["absolute_difference"].max() == 0.0
+    assert not actual["changes_at_reported_precision"].any()
+    assert conditional_crossings().empty

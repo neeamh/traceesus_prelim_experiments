@@ -111,61 +111,89 @@ def _tidy(path: Path, spec: TableSpec) -> pd.DataFrame:
     return result
 
 
-def _paired(spec: TableSpec) -> pd.DataFrame:
-    """Join v1 and v2 by scientific keys and reject dropped estimands."""
+def _paired(
+    spec: TableSpec,
+    before_root: Path,
+    after_root: Path,
+    before_label: str,
+    after_label: str,
+) -> pd.DataFrame:
+    """Join baseline versions by scientific keys and reject dropped estimands."""
 
-    before = _tidy(V1_ROOT / spec.file, spec)
-    after = _tidy(V2_ROOT / spec.file, spec)
+    before = _tidy(before_root / spec.file, spec)
+    after = _tidy(after_root / spec.file, spec)
     paired = before.merge(
         after,
         on=("level", "method", "metric"),
         how="outer",
         validate="one_to_one",
-        suffixes=("_v1", "_v2"),
+        suffixes=(f"_{before_label}", f"_{after_label}"),
         indicator=True,
     )
     if not paired["_merge"].eq("both").all():
-        raise ValueError(f"v1/v2 estimand mismatch in {spec.file}.")
+        raise ValueError(
+            f"{before_label}/{after_label} estimand mismatch in {spec.file}."
+        )
     return paired.drop(columns="_merge")
 
 
 def _reported_columns(
-    paired: pd.DataFrame, contrasts: bool
+    paired: pd.DataFrame,
+    contrasts: bool,
+    before_label: str,
+    after_label: str,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Apply documented manuscript precision only to quantities actually reported."""
 
     before = np.full(len(paired), np.nan)
     after = np.full(len(paired), np.nan)
     eligible = np.zeros(len(paired), dtype=bool)
+    before_column = f"value_{before_label}"
+    after_column = f"value_{after_label}"
     for row, metric in enumerate(paired["metric"]):
         if metric in RATE_METRICS:
             digits = 2 if contrasts else 1
-            before[row] = np.round(100.0 * paired.iloc[row]["value_v1"], digits)
-            after[row] = np.round(100.0 * paired.iloc[row]["value_v2"], digits)
+            before[row] = np.round(100.0 * paired.iloc[row][before_column], digits)
+            after[row] = np.round(100.0 * paired.iloc[row][after_column], digits)
             eligible[row] = True
         elif metric in NATIVE_REPORTED_DIGITS:
             digits = NATIVE_REPORTED_DIGITS[metric]
-            before[row] = np.round(paired.iloc[row]["value_v1"], digits)
-            after[row] = np.round(paired.iloc[row]["value_v2"], digits)
+            before[row] = np.round(paired.iloc[row][before_column], digits)
+            after[row] = np.round(paired.iloc[row][after_column], digits)
             eligible[row] = True
     return before, after, eligible & (before != after)
 
 
-def build_report() -> pd.DataFrame:
+def build_report(
+    before_root: Path = V1_ROOT,
+    after_root: Path = V2_ROOT,
+    before_label: str = "v1",
+    after_label: str = "v2",
+) -> pd.DataFrame:
     """Build one row per reported percentage or percentage-point estimand."""
 
     rows: list[pd.DataFrame] = []
     for spec in TABLES:
-        paired = _paired(spec)
+        paired = _paired(
+            spec, before_root, after_root, before_label, after_label
+        )
         paired.insert(0, "file", spec.file)
-        paired["absolute_difference"] = np.abs(paired["value_v2"] - paired["value_v1"])
-        before, after, changed = _reported_columns(paired, spec.contrasts)
-        paired["reported_v1"] = before
-        paired["reported_v2"] = after
+        before_value = f"value_{before_label}"
+        after_value = f"value_{after_label}"
+        paired["absolute_difference"] = np.abs(
+            paired[after_value] - paired[before_value]
+        )
+        before, after, changed = _reported_columns(
+            paired, spec.contrasts, before_label, after_label
+        )
+        before_reported = f"reported_{before_label}"
+        after_reported = f"reported_{after_label}"
+        paired[before_reported] = before
+        paired[after_reported] = after
         paired["changes_at_reported_precision"] = changed
         rows.append(paired[[
-            "file", "level", "method", "metric", "value_v1", "value_v2",
-            "absolute_difference", "reported_v1", "reported_v2",
+            "file", "level", "method", "metric", before_value, after_value,
+            "absolute_difference", before_reported, after_reported,
             "changes_at_reported_precision",
         ]])
     return pd.concat(rows, ignore_index=True).sort_values(
@@ -173,21 +201,32 @@ def build_report() -> pd.DataFrame:
     )
 
 
-def confidence_interval_crossings() -> pd.DataFrame:
+def confidence_interval_crossings(
+    before_root: Path = V1_ROOT,
+    after_root: Path = V2_ROOT,
+    before_label: str = "v1",
+    after_label: str = "v2",
+) -> pd.DataFrame:
     """Return contrasts whose 95% interval changed zero-inclusion status."""
 
     rows: list[pd.DataFrame] = []
     for spec in TABLES:
         if not spec.ci_columns:
             continue
-        paired = _paired(spec)
-        before = (paired["ci_low_v1"] <= 0.0) & (paired["ci_high_v1"] >= 0.0)
-        after = (paired["ci_low_v2"] <= 0.0) & (paired["ci_high_v2"] >= 0.0)
+        paired = _paired(
+            spec, before_root, after_root, before_label, after_label
+        )
+        before = (paired[f"ci_low_{before_label}"] <= 0.0) & (
+            paired[f"ci_high_{before_label}"] >= 0.0
+        )
+        after = (paired[f"ci_low_{after_label}"] <= 0.0) & (
+            paired[f"ci_high_{after_label}"] >= 0.0
+        )
         changed = paired.loc[before != after].copy()
         if not changed.empty:
             changed.insert(0, "file", spec.file)
-            changed["included_zero_v1"] = before.loc[changed.index]
-            changed["included_zero_v2"] = after.loc[changed.index]
+            changed[f"included_zero_{before_label}"] = before.loc[changed.index]
+            changed[f"included_zero_{after_label}"] = after.loc[changed.index]
             rows.append(changed)
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
