@@ -1,28 +1,4 @@
-"""Two-nuisance latent models: renal on NT-proBNP, heart failure on PTFV1.
-
-Purpose
--------
-The proposal-locked conditional EM represents exactly one nuisance path
-(renal -> NT-proBNP).  Under the heart-failure generator that model is
-misspecified by construction, and — because its nuisance structure stays
-one-path — sufficiency/disablement remain monotone in its posterior, so the
-query comparison is decided by algebra rather than data.
-
-This module generalizes the *model*, not the locked code: a nuisance design
-matrix ``N`` (n x q) with a boolean path mask (q x p).  With the biology mask
-(renal -> NT-proBNP, HF -> PTFV1) the fitted model can represent the redundant
-explanation, which is the precondition for posterior and counterfactual
-queries to separate.
-
-Nothing here touches the locked kernel: the EM below mirrors its arithmetic
-(same floors, same stopping rule, same anchor) but lives in its own module and
-is only ever invoked by the heart-failure grid.
-
-Design choice retained from the locked model: the class prior is conditioned
-on renal status only.  In the generator neither nuisance influences the true
-mechanism, and conditioning the prior on the sparse HF stratum (7%) would add
-an empty-stratum failure mode without representing any additional biology.
-"""
+"""Define two-nuisance latent models and their posterior and counterfactual queries."""
 
 from __future__ import annotations
 
@@ -31,15 +7,17 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.random import Generator
 from configs.endotype_discovery import FittingConfig
-from traceesus.core.em import e_step, m_step
+from traceesus.core.em import (
+    ConditionalParameters,
+    EmissionParameters,
+    conditional_e_step,
+    run_conditional_em_start,
+)
 from traceesus.core.markers import Biomarker
 from traceesus.core.model import FitDiagnostics, FittedModel, Model
 from traceesus.core.simulator import Cohort
-from traceesus.models.adjusted_lcm import conditional_class_probability
 from traceesus.models.associative_lcm import initial_responsibilities
 from traceesus.queries.posterior import anchor_order
-
-from . import kernel
 
 ADJUSTED_TWO_NUISANCE = "Two-nuisance adjusted associative latent model"
 CAUSAL_TWO_NUISANCE = "Two-path biologically constrained latent SCM"
@@ -80,51 +58,6 @@ def _nuisance_matrix(data: Cohort) -> np.ndarray:
     )
 
 
-def _run_multi_start(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    nuisances: np.ndarray,
-    mask: np.ndarray,
-    responsibility: np.ndarray,
-    config: FittingConfig,
-) -> dict[str, object]:
-    """Run one two-nuisance EM start through the shared numerical primitives."""
-
-    converged = False
-    previous = -np.inf
-    for iteration in range(1, config.maximum_em_iterations + 1):
-        class_probability = conditional_class_probability(responsibility, renal, config)
-        emission = m_step(
-            biomarkers,
-            responsibility,
-            config.variance_floor,
-            config.minimum_effective_class_fraction,
-            nuisance_design=nuisances,
-            path_mask=mask,
-        )
-        responsibility, log_likelihood = e_step(
-            biomarkers,
-            np.log(class_probability[renal]),
-            emission.class_means,
-            emission.variance,
-            nuisance_contribution=nuisances @ emission.nuisance_effects,
-        )
-        if np.isfinite(previous):
-            denominator = max(abs(previous), 1.0)
-            if (log_likelihood - previous) / denominator < config.relative_log_likelihood_tolerance:
-                converged = True
-                break
-        previous = log_likelihood
-    return {
-        "class_probability": class_probability,
-        "emission": emission,
-        "log_likelihood": log_likelihood,
-        "converged": converged,
-        "iterations": iteration,
-        "responsibility": responsibility,
-    }
-
-
 def fit_multi_nuisance_latent_model(
     biomarkers: np.ndarray,
     renal: np.ndarray,
@@ -138,37 +71,50 @@ def fit_multi_nuisance_latent_model(
     mask = np.asarray(mask, dtype=bool)
     if mask.shape != (nuisances.shape[1], biomarkers.shape[1]):
         raise ValueError("mask must be (nuisance_count, biomarker_count).")
-    best: dict[str, object] | None = None
+    best = None
+    best_start = -1
     for start_index in range(config.random_starts):
         initial = initial_responsibilities(biomarkers, renal, rng, start_index, config)
         try:
-            candidate = _run_multi_start(biomarkers, renal, nuisances, mask, initial, config)
-        except FloatingPointError:
+            candidate = run_conditional_em_start(
+                biomarkers,
+                renal,
+                nuisances,
+                mask,
+                initial,
+                config.maximum_em_iterations,
+                config.relative_log_likelihood_tolerance,
+                config.variance_floor,
+                config.minimum_effective_class_fraction,
+                config.beta_prior_pseudocount,
+                config.probability_floor,
+            )
+        except (FloatingPointError, np.linalg.LinAlgError):
             continue
-        candidate["best_start"] = start_index
-        if best is None or candidate["log_likelihood"] > best["log_likelihood"]:  # type: ignore[operator]
+        if best is None or candidate.log_likelihood > best.log_likelihood:
             best = candidate
+            best_start = start_index
 
     if best is None:
         raise FloatingPointError("Every EM start collapsed for the two-nuisance model.")
-    emission = best["emission"]
+    emission = best.parameters.emission
     order, margin = anchor_order(
         emission.class_means,
         emission.variance,
         atrial_electrical_index=Biomarker.PTFV1,
         competing_specific_index=Biomarker.COMPETING_VASCULAR,
     )
-    responsibility = best["responsibility"][:, order]
+    responsibility = best.responsibility[:, order]
     return MultiNuisanceLatentFit(
-        class_probability_by_renal=best["class_probability"][:, order],
+        class_probability_by_renal=best.parameters.class_probability_by_renal[:, order],
         class_means_at_reference=emission.class_means[order],
         nuisance_effects=emission.nuisance_effects,
         nuisance_path_mask=mask,
         biomarker_variance=emission.variance,
-        log_likelihood=float(best["log_likelihood"]),
-        converged=bool(best["converged"]),
-        iterations=int(best["iterations"]),
-        best_start=int(best["best_start"]),
+        log_likelihood=best.log_likelihood,
+        converged=best.converged,
+        iterations=best.iterations,
+        best_start=best_start,
         effective_class_fraction=np.mean(responsibility, axis=0),
         anchor_margin=margin,
     )
@@ -182,12 +128,20 @@ def multi_nuisance_posterior(
 ) -> np.ndarray:
     """Posterior over mechanisms under the fitted two-nuisance model."""
 
-    responsibility, _ = e_step(
+    parameters = ConditionalParameters(
+        fit.class_probability_by_renal,
+        EmissionParameters(
+            fit.class_means_at_reference,
+            fit.nuisance_effects,
+            fit.biomarker_variance,
+        ),
+    )
+    responsibility, _ = conditional_e_step(
         biomarkers,
-        np.log(fit.class_probability_by_renal[renal]),
-        fit.class_means_at_reference,
-        fit.biomarker_variance,
-        nuisance_contribution=nuisances @ fit.nuisance_effects,
+        renal,
+        nuisances,
+        fit.nuisance_path_mask,
+        parameters,
     )
     return responsibility
 

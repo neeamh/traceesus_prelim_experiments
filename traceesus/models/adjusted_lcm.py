@@ -8,7 +8,12 @@ import numpy as np
 from numpy.random import Generator
 
 from configs.endotype_discovery import FittingConfig
-from traceesus.core.em import e_step, has_converged, m_step
+from traceesus.core.em import (
+    ConditionalParameters,
+    EmissionParameters,
+    conditional_e_step,
+    run_conditional_em_start,
+)
 from traceesus.core.markers import Biomarker
 from traceesus.core.model import FitDiagnostics, FittedModel, Model
 from traceesus.core.simulator import Cohort
@@ -36,74 +41,6 @@ class ConditionalLatentFit:
     anchor_margin: float
 
 
-def conditional_class_probability(
-    responsibility: np.ndarray,
-    renal: np.ndarray,
-    config: FittingConfig,
-) -> np.ndarray:
-    """Update the retained smoothed p(Z|R) term for both renal strata."""
-
-    result = np.zeros((2, responsibility.shape[1]), dtype=float)
-    smoothing = config.beta_prior_pseudocount
-    for renal_value in (0, 1):
-        stratum = renal == renal_value
-        stratum_count = int(np.sum(stratum))
-        if stratum_count == 0:
-            raise FloatingPointError("A renal stratum was empty.")
-        atrial = (float(np.sum(responsibility[stratum, 0])) + smoothing) / (
-            stratum_count + 2.0 * smoothing
-        )
-        atrial = float(np.clip(
-            atrial, config.probability_floor, 1.0 - config.probability_floor
-        ))
-        result[renal_value] = (atrial, 1.0 - atrial)
-    return result
-
-
-def _fit_start(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    renal_path_mask: np.ndarray,
-    responsibility: np.ndarray,
-    config: FittingConfig,
-) -> dict[str, object]:
-    """Run one conditional EM start using the shared masked emission update."""
-
-    previous = -np.inf
-    converged = False
-    design = renal[:, None].astype(float)
-    paths = renal_path_mask[None, :]
-    for iteration in range(1, config.maximum_em_iterations + 1):
-        class_probability = conditional_class_probability(responsibility, renal, config)
-        emission = m_step(
-            biomarkers,
-            responsibility,
-            config.variance_floor,
-            config.minimum_effective_class_fraction,
-            nuisance_design=design,
-            path_mask=paths,
-        )
-        responsibility, log_likelihood = e_step(
-            biomarkers,
-            np.log(class_probability[renal]),
-            emission.class_means,
-            emission.variance,
-            nuisance_contribution=design @ emission.nuisance_effects,
-        )
-        if has_converged(previous, log_likelihood, config.relative_log_likelihood_tolerance):
-            converged = True
-            break
-        previous = log_likelihood
-    return {
-        "class_probability": class_probability,
-        "emission": emission,
-        "responsibility": responsibility,
-        "log_likelihood": log_likelihood,
-        "converged": converged,
-        "iterations": iteration,
-    }
-
-
 def fit_conditional_latent_model(
     biomarkers: np.ndarray,
     renal: np.ndarray,
@@ -116,36 +53,51 @@ def fit_conditional_latent_model(
     mask = np.asarray(renal_path_mask, dtype=bool)
     if mask.shape != (biomarkers.shape[1],):
         raise ValueError("renal_path_mask must contain one Boolean per biomarker.")
-    best: dict[str, object] | None = None
+    design = renal[:, None].astype(float)
+    paths = mask[None, :]
+    best = None
+    best_start = -1
     for start_index in range(config.random_starts):
         responsibility = initial_responsibilities(biomarkers, renal, rng, start_index, config)
         try:
-            candidate = _fit_start(biomarkers, renal, mask, responsibility, config)
+            candidate = run_conditional_em_start(
+                biomarkers,
+                renal,
+                design,
+                paths,
+                responsibility,
+                config.maximum_em_iterations,
+                config.relative_log_likelihood_tolerance,
+                config.variance_floor,
+                config.minimum_effective_class_fraction,
+                config.beta_prior_pseudocount,
+                config.probability_floor,
+            )
         except (FloatingPointError, np.linalg.LinAlgError):
             continue
-        candidate["best_start"] = start_index
-        if best is None or float(candidate["log_likelihood"]) > float(best["log_likelihood"]):
+        if best is None or candidate.log_likelihood > best.log_likelihood:
             best = candidate
+            best_start = start_index
     if best is None:
         raise RuntimeError("All conditional latent-model EM starts failed.")
-    emission = best["emission"]
+    emission = best.parameters.emission
     order, margin = anchor_order(
         emission.class_means,
         emission.variance,
         atrial_electrical_index=Biomarker.PTFV1,
         competing_specific_index=Biomarker.COMPETING_VASCULAR,
     )
-    responsibility = best["responsibility"][:, order]
+    responsibility = best.responsibility[:, order]
     return ConditionalLatentFit(
-        best["class_probability"][:, order],
+        best.parameters.class_probability_by_renal[:, order],
         emission.class_means[order],
         emission.nuisance_effects[0],
         mask,
         emission.variance,
-        float(best["log_likelihood"]),
-        bool(best["converged"]),
-        int(best["iterations"]),
-        int(best["best_start"]),
+        best.log_likelihood,
+        best.converged,
+        best.iterations,
+        best_start,
         np.mean(responsibility, axis=0),
         margin,
     )
@@ -158,12 +110,20 @@ def conditional_posterior(
 ) -> np.ndarray:
     """Evaluate the fitted renal-conditional posterior deterministically."""
 
-    responsibility, _ = e_step(
+    parameters = ConditionalParameters(
+        fit.class_probability_by_renal,
+        EmissionParameters(
+            fit.class_means_at_renal_normal,
+            fit.renal_effect[None, :],
+            fit.biomarker_variance,
+        ),
+    )
+    responsibility, _ = conditional_e_step(
         biomarkers,
-        np.log(fit.class_probability_by_renal[renal]),
-        fit.class_means_at_renal_normal,
-        fit.biomarker_variance,
-        nuisance_contribution=renal[:, None] * fit.renal_effect[None, :],
+        renal,
+        renal[:, None].astype(float),
+        fit.renal_path_mask[None, :],
+        parameters,
     )
     return responsibility
 
@@ -220,7 +180,6 @@ __all__ = [
     "AdjustedLatentClassModel",
     "ConditionalLatentFit",
     "FittedAdjustedLatentClassModel",
-    "conditional_class_probability",
     "conditional_posterior",
     "fit_conditional_latent_model",
 ]

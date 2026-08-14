@@ -1,4 +1,4 @@
-"""Provide the single missingness-aware Gaussian-mixture E-step and M-step."""
+"""Provide the shared missingness-aware unconditional and conditional EM primitives."""
 
 from __future__ import annotations
 
@@ -15,6 +15,25 @@ class EmissionParameters:
     class_means: np.ndarray
     nuisance_effects: np.ndarray
     variance: np.ndarray
+
+
+@dataclass(frozen=True)
+class ConditionalParameters:
+    """Parameters for p(Z|R) p(B|Z,N) under a fixed nuisance path mask."""
+
+    class_probability_by_renal: np.ndarray
+    emission: EmissionParameters
+
+
+@dataclass(frozen=True)
+class ConditionalStartResult:
+    """Result of one deterministic conditional-EM start."""
+
+    parameters: ConditionalParameters
+    responsibility: np.ndarray
+    log_likelihood: float
+    converged: bool
+    iterations: int
 
 
 def _observed_mask(
@@ -214,11 +233,161 @@ def has_converged(
     )
 
 
+def _conditional_inputs(
+    biomarkers: np.ndarray,
+    renal: np.ndarray,
+    nuisance_design: np.ndarray,
+    path_mask: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Validate the fixed shapes shared by conditional E- and M-steps."""
+
+    renal_values = np.asarray(renal)
+    design = np.asarray(nuisance_design, dtype=float)
+    paths = np.asarray(path_mask, dtype=bool)
+    patient_count, marker_count = biomarkers.shape
+    if renal_values.shape != (patient_count,):
+        raise ValueError("renal must contain one value per patient.")
+    if design.ndim != 2 or design.shape[0] != patient_count:
+        raise ValueError("nuisance_design must be (patient_count, nuisance_count).")
+    if paths.shape != (design.shape[1], marker_count):
+        raise ValueError("path_mask must be (nuisance_count, biomarker_count).")
+    if not np.isin(renal_values, (0, 1)).all():
+        raise ValueError("renal must contain only zero and one.")
+    return renal_values.astype(int, copy=False), design, paths
+
+
+def _conditional_class_probability(
+    responsibility: np.ndarray,
+    renal: np.ndarray,
+    beta_prior_pseudocount: float,
+    probability_floor: float,
+) -> np.ndarray:
+    """Update the retained smoothed two-class p(Z|R) term."""
+
+    result = np.zeros((2, responsibility.shape[1]), dtype=float)
+    for renal_value in (0, 1):
+        stratum = renal == renal_value
+        stratum_count = int(np.sum(stratum))
+        if stratum_count == 0:
+            raise FloatingPointError("A renal stratum was empty.")
+        atrial = (
+            float(np.sum(responsibility[stratum, 0])) + beta_prior_pseudocount
+        ) / (stratum_count + 2.0 * beta_prior_pseudocount)
+        atrial = float(np.clip(atrial, probability_floor, 1.0 - probability_floor))
+        result[renal_value] = (atrial, 1.0 - atrial)
+    return result
+
+
+def conditional_m_step(
+    biomarkers: np.ndarray,
+    renal: np.ndarray,
+    nuisance_design: np.ndarray,
+    path_mask: np.ndarray,
+    responsibility: np.ndarray,
+    variance_floor: float,
+    minimum_class_fraction: float,
+    beta_prior_pseudocount: float,
+    probability_floor: float,
+    measurement_mask: np.ndarray | None = None,
+) -> ConditionalParameters:
+    """Run the sole M-step for p(Z|R) p(B|Z,N) with masked nuisance paths."""
+
+    renal_values, design, paths = _conditional_inputs(
+        biomarkers, renal, nuisance_design, path_mask
+    )
+    class_probability = _conditional_class_probability(
+        responsibility,
+        renal_values,
+        beta_prior_pseudocount,
+        probability_floor,
+    )
+    emission = m_step(
+        biomarkers,
+        responsibility,
+        variance_floor,
+        minimum_class_fraction,
+        measurement_mask,
+        design,
+        paths,
+    )
+    return ConditionalParameters(class_probability, emission)
+
+
+def conditional_e_step(
+    biomarkers: np.ndarray,
+    renal: np.ndarray,
+    nuisance_design: np.ndarray,
+    path_mask: np.ndarray,
+    parameters: ConditionalParameters,
+    measurement_mask: np.ndarray | None = None,
+) -> tuple[np.ndarray, float]:
+    """Run the sole E-step for p(Z|R) p(B|Z,N) with masked nuisance paths."""
+
+    renal_values, design, paths = _conditional_inputs(
+        biomarkers, renal, nuisance_design, path_mask
+    )
+    effects = parameters.emission.nuisance_effects
+    if effects.shape != paths.shape:
+        raise ValueError("Fitted nuisance effects must match path_mask.")
+    if np.any(effects[~paths] != 0.0):
+        raise ValueError("Fitted nuisance effects violate path_mask.")
+    return e_step(
+        biomarkers,
+        np.log(parameters.class_probability_by_renal[renal_values]),
+        parameters.emission.class_means,
+        parameters.emission.variance,
+        measurement_mask,
+        design @ effects,
+    )
+
+
+def run_conditional_em_start(
+    biomarkers: np.ndarray,
+    renal: np.ndarray,
+    nuisance_design: np.ndarray,
+    path_mask: np.ndarray,
+    responsibility: np.ndarray,
+    maximum_iterations: int,
+    relative_tolerance: float,
+    variance_floor: float,
+    minimum_class_fraction: float,
+    beta_prior_pseudocount: float,
+    probability_floor: float,
+    measurement_mask: np.ndarray | None = None,
+) -> ConditionalStartResult:
+    """Run one deterministic conditional-EM start through the sole E- and M-steps."""
+
+    previous = -np.inf
+    converged = False
+    for iteration in range(1, maximum_iterations + 1):
+        parameters = conditional_m_step(
+            biomarkers, renal, nuisance_design, path_mask, responsibility,
+            variance_floor, minimum_class_fraction, beta_prior_pseudocount,
+            probability_floor, measurement_mask,
+        )
+        responsibility, log_likelihood = conditional_e_step(
+            biomarkers, renal, nuisance_design, path_mask, parameters,
+            measurement_mask,
+        )
+        if has_converged(previous, log_likelihood, relative_tolerance):
+            converged = True
+            break
+        previous = log_likelihood
+    return ConditionalStartResult(
+        parameters, responsibility, log_likelihood, converged, iteration
+    )
+
+
 __all__ = [
+    "ConditionalParameters",
+    "ConditionalStartResult",
     "EmissionParameters",
+    "conditional_e_step",
+    "conditional_m_step",
     "diagonal_gaussian_log_density",
     "e_step",
     "has_converged",
     "m_step",
     "normalize_responsibilities",
+    "run_conditional_em_start",
 ]
