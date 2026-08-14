@@ -200,7 +200,7 @@
   },
   "master_seed": 20260728,
   "package_version": "0.1.0",
-  "git_commit": "c0c5f4c9ec21441796ad85cee682b0338361e96b",
+  "git_commit": "0ff51ecd0f0e846f75d84dc75b09a47c57ce521a",
   "git_state": "available",
   "package_versions": {
     "python": "3.12.0",
@@ -209,7 +209,7 @@
     "scipy": "1.14.1",
     "matplotlib": "3.9.2"
   },
-  "wall_clock_runtime_seconds": 91.26517770800274,
+  "wall_clock_runtime_seconds": 204.6949421249883,
   "output_file_sha256": {
     "ablations/ablation_accuracy_changes.csv": "83eb2e9e8df27162fbe0afec94c3cea7789243fe20c10959d0267602a7e82b9b",
     "ablations/ablation_summary.csv": "57974999636dfd343cf661990ccb10d0902774e9761dea7d6763f48d0d2cfd0a",

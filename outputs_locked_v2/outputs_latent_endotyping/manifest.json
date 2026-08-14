@@ -53,7 +53,7 @@
   },
   "master_seed": 20260728,
   "package_version": "0.1.0",
-  "git_commit": "c0c5f4c9ec21441796ad85cee682b0338361e96b",
+  "git_commit": "0ff51ecd0f0e846f75d84dc75b09a47c57ce521a",
   "git_state": "available",
   "package_versions": {
     "python": "3.12.0",
@@ -62,7 +62,7 @@
     "scipy": "1.14.1",
     "matplotlib": "3.9.2"
   },
-  "wall_clock_runtime_seconds": 392.20901075001166,
+  "wall_clock_runtime_seconds": 357.1640045840031,
   "output_file_sha256": {
     "endotype_discovery_contrasts.csv": "5c304be399e301d4d9edce60ba9d71ea5edcb140f558d376a89da2a34b46847d",
     "endotype_discovery_example_patient.csv": "ef0a682cb84ce42591aa18ccdbcfb0acd2842a099a963477d4ee4fc5a7349afe",

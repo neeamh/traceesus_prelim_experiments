@@ -48,7 +48,7 @@
   },
   "master_seed": 20260728,
   "package_version": "0.1.0",
-  "git_commit": "c0c5f4c9ec21441796ad85cee682b0338361e96b",
+  "git_commit": "0ff51ecd0f0e846f75d84dc75b09a47c57ce521a",
   "git_state": "available",
   "package_versions": {
     "python": "3.12.0",
@@ -57,7 +57,7 @@
     "scipy": "1.14.1",
     "matplotlib": "3.9.2"
   },
-  "wall_clock_runtime_seconds": 21.69971870801237,
+  "wall_clock_runtime_seconds": 21.679641916998662,
   "output_file_sha256": {
     "counterfactual_contrasts.csv": "5379a3dbaa7b2d55dd8fca3f9f207203e3052b27814b3b3398316f371ae6918c",
     "counterfactual_raw_long.csv": "50b7f6bce64c5e1c5ac8dd7958e85efe114a34addba5a880916f19d72cdc1197",
