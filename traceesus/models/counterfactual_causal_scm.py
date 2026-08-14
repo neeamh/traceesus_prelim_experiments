@@ -30,8 +30,14 @@ import numpy as np
 from numpy.random import Generator
 
 from traceesus.core.model import FitDiagnostics, FittedModel, Model
+from traceesus.core.markers import Biomarker
 from traceesus.core.simulator import Cohort
-from traceesus.experiments.endotype_discovery import kernel
+from traceesus.models.adjusted_lcm import (
+    ConditionalLatentFit,
+    conditional_posterior,
+    fit_conditional_latent_model,
+)
+from configs.endotype_discovery import FittingConfig
 
 COUNTERFACTUAL_CAUSAL_SCM = "Biologically constrained latent SCM (counterfactual query)"
 
@@ -39,97 +45,75 @@ _DISABLEMENT_WEIGHT = 0.50
 _SUFFICIENCY_WEIGHT = 0.50
 
 
+def _fitted_candidate_scores(
+    candidate: int,
+    biomarkers: np.ndarray,
+    posterior: np.ndarray,
+    effects: np.ndarray,
+    noise_sd: np.ndarray,
+    nuisance: np.ndarray,
+    residual: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Evaluate one fitted candidate under both abducted mechanism branches."""
+
+    n, marker_count = biomarkers.shape
+    disablement_by_branch = np.empty((n, 2), dtype=float)
+    sufficiency_by_branch = np.empty((n, 2), dtype=float)
+    for branch in (0, 1):
+        disabled_gate = np.zeros(marker_count) if branch == candidate else effects[branch]
+        disabled = nuisance + disabled_gate + residual[:, branch, :]
+        disablement_by_branch[:, branch] = np.sum(
+            ((biomarkers - disabled) / noise_sd) ** 2, axis=1
+        )
+        candidate_only = nuisance + effects[candidate] + residual[:, branch, :]
+        sufficiency_by_branch[:, branch] = np.exp(
+            -0.5 * np.sum(((biomarkers - candidate_only) / noise_sd) ** 2, axis=1)
+        )
+    maximum = np.sum((effects[candidate] / noise_sd) ** 2)
+    disablement = np.divide(
+        np.sum(posterior * disablement_by_branch, axis=1),
+        maximum,
+        out=np.zeros(n),
+        where=maximum > 0.0,
+    )
+    other = 1 if candidate == 0 else 0
+    mismatch = float(np.exp(-0.5 * np.sum(((effects[candidate] - effects[other]) / noise_sd) ** 2)))
+    expected = np.sum(posterior * sufficiency_by_branch, axis=1)
+    sufficiency = (expected - mismatch) / (1.0 - mismatch) if abs(1.0 - mismatch) > 1e-12 else np.zeros(n)
+    return disablement, sufficiency
+
+
 def fitted_counterfactual_scores(
-    fit_result: kernel.ConditionalLatentFit,
+    fit_result: ConditionalLatentFit,
     biomarkers: np.ndarray,
     renal: np.ndarray,
     *,
     disablement_weight: float = _DISABLEMENT_WEIGHT,
     sufficiency_weight: float = _SUFFICIENCY_WEIGHT,
 ) -> dict[str, np.ndarray]:
-    """Abduction-action-prediction on estimated rather than supplied parameters.
+    """Apply abduction-action-prediction to one fitted conditional SCM."""
 
-    The arithmetic mirrors the locked known-SCM routine exactly — per-branch
-    residual abduction, reuse of that residual under intervention, and
-    integration over the model's own posterior — with every structural quantity
-    read from the fit instead of the simulator.  Abducting within each branch,
-    rather than once as if a candidate were already factual, is what keeps the
-    query a counterfactual rather than a relabeled likelihood.
-    """
-
-    posterior = kernel.conditional_posterior(fit_result, biomarkers, renal)
+    posterior = conditional_posterior(fit_result, biomarkers, renal)
     effects = np.asarray(fit_result.class_means_at_renal_normal, dtype=float)
     noise_sd = np.sqrt(np.asarray(fit_result.biomarker_variance, dtype=float))
-    marker_count = biomarkers.shape[1]
-    n = biomarkers.shape[0]
-
-    nuisance_contribution = renal[:, None] * np.asarray(
-        fit_result.renal_effect, dtype=float
-    )
-
-    # residual[i, z, :] is the exogenous residual abducted under branch Z = z.
-    residual = np.empty((n, 2, marker_count), dtype=float)
-    for branch in (kernel.Mechanism.ATRIAL, kernel.Mechanism.COMPETING):
-        residual[:, branch, :] = biomarkers - (effects[branch] + nuisance_contribution)
-
-    normalized_disablement = np.empty((n, 2), dtype=float)
-    normalized_sufficiency = np.empty((n, 2), dtype=float)
-
-    for candidate in (kernel.Mechanism.ATRIAL, kernel.Mechanism.COMPETING):
-        disablement_by_branch = np.empty((n, 2), dtype=float)
-        sufficiency_by_branch = np.empty((n, 2), dtype=float)
-
-        for branch in (kernel.Mechanism.ATRIAL, kernel.Mechanism.COMPETING):
-            disabled_gate = (
-                np.zeros(marker_count, dtype=float)
-                if branch == candidate
-                else effects[branch]
-            )
-            if_disabled = nuisance_contribution + disabled_gate + residual[:, branch, :]
-            disablement_by_branch[:, branch] = np.sum(
-                ((biomarkers - if_disabled) / noise_sd) ** 2, axis=1
-            )
-
-            if_candidate_only = (
-                nuisance_contribution + effects[candidate] + residual[:, branch, :]
-            )
-            sufficiency_by_branch[:, branch] = np.exp(
-                -0.5
-                * np.sum(((biomarkers - if_candidate_only) / noise_sd) ** 2, axis=1)
-            )
-
-        maximum_disablement = np.sum((effects[candidate] / noise_sd) ** 2)
-        normalized_disablement[:, candidate] = np.divide(
-            np.sum(posterior * disablement_by_branch, axis=1),
-            maximum_disablement,
-            out=np.zeros(n, dtype=float),
-            where=maximum_disablement > 0.0,
-        )
-
-        other = (
-            kernel.Mechanism.COMPETING
-            if candidate == kernel.Mechanism.ATRIAL
-            else kernel.Mechanism.ATRIAL
-        )
-        mismatch_fit = float(
-            np.exp(-0.5 * np.sum(((effects[candidate] - effects[other]) / noise_sd) ** 2))
-        )
-        denominator = 1.0 - mismatch_fit
-        expected_sufficiency = np.sum(posterior * sufficiency_by_branch, axis=1)
-        normalized_sufficiency[:, candidate] = (
-            (expected_sufficiency - mismatch_fit) / denominator
-            if abs(denominator) > 1e-12
-            else np.zeros(n, dtype=float)
+    nuisance = renal[:, None] * np.asarray(fit_result.renal_effect, dtype=float)
+    residual = np.empty((len(biomarkers), 2, biomarkers.shape[1]), dtype=float)
+    for branch in (0, 1):
+        residual[:, branch, :] = biomarkers - (effects[branch] + nuisance)
+    disablement = np.empty((len(biomarkers), 2), dtype=float)
+    sufficiency = np.empty((len(biomarkers), 2), dtype=float)
+    for candidate in (0, 1):
+        disablement[:, candidate], sufficiency[:, candidate] = _fitted_candidate_scores(
+            candidate, biomarkers, posterior, effects, noise_sd, nuisance, residual
         )
 
     combined = (
-        disablement_weight * normalized_disablement
-        + sufficiency_weight * normalized_sufficiency
+        disablement_weight * disablement + sufficiency_weight * sufficiency
     )
     return {
         "combined": combined,
-        "disablement": normalized_disablement,
-        "sufficiency": normalized_sufficiency,
+        "disablement": disablement,
+        "sufficiency": sufficiency,
         "posterior": posterior,
     }
 
@@ -152,7 +136,7 @@ def _row_normalize(scores: np.ndarray) -> np.ndarray:
 class FittedCounterfactualCausalSCM(FittedModel):
     """Same fitted conditional SCM, answered by sufficiency and disablement."""
 
-    fit_result: kernel.ConditionalLatentFit
+    fit_result: ConditionalLatentFit
 
     def posterior(self, data: Cohort) -> np.ndarray:
         """Return normalized counterfactual attribution for ranking metrics."""
@@ -189,22 +173,23 @@ class FittedCounterfactualCausalSCM(FittedModel):
         return 12
 
 
+@dataclass(frozen=True)
 class CounterfactualCausalSCM(Model):
     """Fit the constrained latent SCM and query it counterfactually."""
 
-    name = COUNTERFACTUAL_CAUSAL_SCM
+    name: str = COUNTERFACTUAL_CAUSAL_SCM
 
     def fit(
         self,
         data: Cohort,
         rng: Generator,
-        config: kernel.FittingConfig,
+        config: FittingConfig,
     ) -> FittedCounterfactualCausalSCM:
         """Reuse the exact conditional EM sequence used by the posterior row."""
 
         mask = np.zeros(data.biomarkers.shape[1], dtype=bool)
-        mask[kernel.Biomarker.NT_PROBNP] = True
-        result = kernel.fit_conditional_latent_model(
+        mask[Biomarker.NT_PROBNP] = True
+        result = fit_conditional_latent_model(
             data.biomarkers,
             data.covariate("renal_dysfunction"),
             mask,

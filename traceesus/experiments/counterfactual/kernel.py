@@ -31,7 +31,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import scipy
-from scipy.special import expit, logsumexp
+from scipy.special import expit
 
 from traceesus.core.stats import (
     bic,
@@ -42,6 +42,13 @@ from traceesus.core.stats import (
 from traceesus.core.runner import nested_seed_sequence_ledger, seed_sequence_ledger
 from traceesus.core.io import write_manifest
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
+from traceesus.models.known_scm import (
+    fit_one_diagonal_gaussian as _fit_one_diagonal_gaussian,
+    fit_two_diagonal_gaussians as _fit_two_diagonal_gaussians,
+    kidney_aware_posterior,
+    kidney_blind_posterior,
+    posterior_integrated_counterfactual_scores,
+)
 from configs.counterfactual import ExperimentConfig
 
 
@@ -80,190 +87,6 @@ def simulate_two_mechanism_study(
         "renal": renal,
         "biomarkers": generated.observed.biomarkers,
         "atrial_prior": atrial_prior_given_renal(renal, config),
-    }
-
-
-def _posterior_from_model(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    renal_effect_sd: float,
-    config: ExperimentConfig,
-    *,
-    include_renal_path: bool,
-) -> np.ndarray:
-    """Compute exact two-class posterior probabilities under a specified model."""
-
-    effects = np.asarray(config.mechanism_effects, dtype=float)
-    noise_sd = np.asarray(config.biomarker_noise_sd, dtype=float)
-    n = biomarkers.shape[0]
-
-    if include_renal_path:
-        atrial_prior = atrial_prior_given_renal(renal, config)
-        renal_contribution = np.zeros((n, 3), dtype=float)
-        renal_contribution[:, 0] = renal_effect_sd * renal
-    else:
-        renal_zero = np.zeros(1, dtype=int)
-        prior_if_normal = atrial_prior_given_renal(renal_zero, config)[0]
-        renal_one = np.ones(1, dtype=int)
-        prior_if_impaired = atrial_prior_given_renal(renal_one, config)[0]
-        marginal_atrial_prior = (
-            (1.0 - config.renal_prevalence) * prior_if_normal
-            + config.renal_prevalence * prior_if_impaired
-        )
-        atrial_prior = np.full(n, marginal_atrial_prior, dtype=float)
-        renal_contribution = np.zeros((n, 3), dtype=float)
-
-    class_priors = np.column_stack((atrial_prior, 1.0 - atrial_prior))
-    log_joint = np.empty((n, 2), dtype=float)
-    for mechanism in (ATRIAL, COMPETING):
-        candidate_mean = effects[mechanism] + renal_contribution
-        standardized_residual = (biomarkers - candidate_mean) / noise_sd
-        log_likelihood = -0.5 * np.sum(standardized_residual**2, axis=1)
-        log_joint[:, mechanism] = (
-            log_likelihood + np.log(class_priors[:, mechanism])
-        )
-
-    return np.exp(log_joint - logsumexp(log_joint, axis=1, keepdims=True))
-
-
-def kidney_blind_posterior(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    renal_effect_sd: float,
-    config: ExperimentConfig,
-) -> np.ndarray:
-    """Biomarker-resemblance posterior that deliberately omits the renal path."""
-
-    return _posterior_from_model(
-        biomarkers,
-        renal,
-        renal_effect_sd,
-        config,
-        include_renal_path=False,
-    )
-
-
-def kidney_aware_posterior(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    renal_effect_sd: float,
-    config: ExperimentConfig,
-) -> np.ndarray:
-    """Correct posterior under the same renal-aware SCM used by the causal query."""
-
-    return _posterior_from_model(
-        biomarkers,
-        renal,
-        renal_effect_sd,
-        config,
-        include_renal_path=True,
-    )
-
-
-def posterior_integrated_counterfactual_scores(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    renal_effect_sd: float,
-    config: ExperimentConfig,
-) -> dict[str, np.ndarray]:
-    """Compute sufficiency and disablement by abduction-action-prediction.
-
-    For every patient, we enumerate both latent-mechanism branches. Within each
-    branch we abduct that branch's exogenous biomarker residual, reuse the same
-    residual under intervention, and average the resulting counterfactual
-    quantity over the kidney-aware posterior. This avoids the invalid shortcut
-    of abducting once "as if" each candidate were already true.
-
-    In this deliberately symmetric K=2 toy model, normalized sufficiency and
-    disablement are monotone transformations of the correctly specified
-    posterior. That is a feature, not a bug: it establishes that any gain over
-    the kidney-blind resemblance baseline comes from modeling the renal path,
-    not from claiming a causal query beats the Bayes classifier by magic.
-    """
-
-    posterior = kidney_aware_posterior(
-        biomarkers, renal, renal_effect_sd, config
-    )
-    effects = np.asarray(config.mechanism_effects, dtype=float)
-    noise_sd = np.asarray(config.biomarker_noise_sd, dtype=float)
-    n = biomarkers.shape[0]
-
-    renal_contribution = np.zeros((n, 3), dtype=float)
-    renal_contribution[:, 0] = renal_effect_sd * renal
-
-    # U[i, z, :] is the branch-specific exogenous residual abducted under Z=z.
-    exogenous_residual = np.empty((n, 2, 3), dtype=float)
-    for branch in (ATRIAL, COMPETING):
-        branch_mean = effects[branch] + renal_contribution
-        exogenous_residual[:, branch, :] = biomarkers - branch_mean
-
-    normalized_disablement = np.empty((n, 2), dtype=float)
-    normalized_sufficiency = np.empty((n, 2), dtype=float)
-
-    for candidate in (ATRIAL, COMPETING):
-        disablement_by_branch = np.empty((n, 2), dtype=float)
-        sufficiency_fit_by_branch = np.empty((n, 2), dtype=float)
-
-        for branch in (ATRIAL, COMPETING):
-            factual_gate = effects[branch]
-            disabled_gate = (
-                np.zeros(3, dtype=float)
-                if branch == candidate
-                else effects[branch]
-            )
-            biomarkers_if_disabled = (
-                renal_contribution
-                + disabled_gate
-                + exogenous_residual[:, branch, :]
-            )
-            disabled_distance = np.sum(
-                ((biomarkers - biomarkers_if_disabled) / noise_sd) ** 2,
-                axis=1,
-            )
-            disablement_by_branch[:, branch] = disabled_distance
-
-            biomarkers_if_candidate_only = (
-                renal_contribution
-                + effects[candidate]
-                + exogenous_residual[:, branch, :]
-            )
-            sufficient_distance = np.sum(
-                ((biomarkers - biomarkers_if_candidate_only) / noise_sd) ** 2,
-                axis=1,
-            )
-            sufficiency_fit_by_branch[:, branch] = np.exp(
-                -0.5 * sufficient_distance
-            )
-
-        expected_disablement = np.sum(
-            posterior * disablement_by_branch, axis=1
-        )
-        maximum_disablement = np.sum((effects[candidate] / noise_sd) ** 2)
-        normalized_disablement[:, candidate] = (
-            expected_disablement / maximum_disablement
-        )
-
-        expected_sufficiency = np.sum(
-            posterior * sufficiency_fit_by_branch, axis=1
-        )
-        other = COMPETING if candidate == ATRIAL else ATRIAL
-        mismatch_distance = np.sum(
-            ((effects[candidate] - effects[other]) / noise_sd) ** 2
-        )
-        mismatch_fit = np.exp(-0.5 * mismatch_distance)
-        normalized_sufficiency[:, candidate] = (
-            (expected_sufficiency - mismatch_fit) / (1.0 - mismatch_fit)
-        )
-
-    combined = (
-        config.counterfactual_disablement_weight * normalized_disablement
-        + config.counterfactual_sufficiency_weight * normalized_sufficiency
-    )
-    return {
-        "combined": combined,
-        "disablement": normalized_disablement,
-        "sufficiency": normalized_sufficiency,
-        "posterior": posterior,
     }
 
 
@@ -455,121 +278,6 @@ def summarize_paired_differences(raw_metrics: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
-
-
-def _log_diag_gaussian(
-    x: np.ndarray,
-    means: np.ndarray,
-    variances: np.ndarray,
-) -> np.ndarray:
-    """Return log densities for every row and diagonal-Gaussian component."""
-
-    centered = x[:, None, :] - means[None, :, :]
-    return -0.5 * (
-        np.sum(np.log(2.0 * np.pi * variances), axis=1)[None, :]
-        + np.sum(centered**2 / variances[None, :, :], axis=2)
-    )
-
-
-def _fit_one_diagonal_gaussian(
-    x: np.ndarray,
-    variance_floor: float,
-) -> dict[str, Any]:
-    means = np.mean(x, axis=0, keepdims=True)
-    variances = np.maximum(np.var(x, axis=0, keepdims=True), variance_floor)
-    log_likelihood = float(np.sum(_log_diag_gaussian(x, means, variances)))
-    return {
-        "log_likelihood": log_likelihood,
-        "weights": np.array([1.0]),
-        "means": means,
-        "variances": variances,
-        "converged": True,
-        "iterations": 1,
-    }
-
-
-def _fit_two_diagonal_gaussians(
-    x: np.ndarray,
-    rng: np.random.Generator,
-    *,
-    starts: int,
-    max_iter: int,
-    variance_floor: float,
-    tolerance: float = 1e-5,
-) -> dict[str, Any]:
-    """Fit a two-component diagonal Gaussian mixture with multiple EM starts."""
-
-    n, dimension = x.shape
-    global_variance = np.maximum(np.var(x, axis=0), variance_floor)
-    best: dict[str, Any] | None = None
-
-    for start in range(starts):
-        if start == 0:
-            direction = np.zeros(dimension)
-            direction[np.argmax(global_variance)] = 1.0
-        else:
-            direction = rng.normal(size=dimension)
-            direction /= np.linalg.norm(direction)
-        projection = x @ direction
-        lower, upper = np.quantile(projection, [0.30, 0.70])
-        lower_group = x[projection <= lower]
-        upper_group = x[projection >= upper]
-        means = np.vstack((lower_group.mean(axis=0), upper_group.mean(axis=0)))
-        variances = np.tile(global_variance, (2, 1))
-        weights = np.array([0.5, 0.5])
-        previous_log_likelihood = -np.inf
-        converged = False
-
-        for iteration in range(1, max_iter + 1):
-            log_joint = (
-                np.log(np.clip(weights, 1e-12, None))[None, :]
-                + _log_diag_gaussian(x, means, variances)
-            )
-            row_log_likelihood = logsumexp(log_joint, axis=1)
-            log_likelihood = float(np.sum(row_log_likelihood))
-            responsibilities = np.exp(
-                log_joint - row_log_likelihood[:, None]
-            )
-
-            effective_n = np.maximum(responsibilities.sum(axis=0), 1e-8)
-            weights = effective_n / n
-            means = (responsibilities.T @ x) / effective_n[:, None]
-            centered = x[:, None, :] - means[None, :, :]
-            variances = np.einsum(
-                "nk,nkd->kd", responsibilities, centered**2
-            ) / effective_n[:, None]
-            variances = np.maximum(variances, variance_floor)
-
-            if np.isfinite(previous_log_likelihood):
-                improvement = log_likelihood - previous_log_likelihood
-                if abs(improvement) <= tolerance * (
-                    1.0 + abs(previous_log_likelihood)
-                ):
-                    converged = True
-                    break
-            previous_log_likelihood = log_likelihood
-
-        final_log_joint = (
-            np.log(np.clip(weights, 1e-12, None))[None, :]
-            + _log_diag_gaussian(x, means, variances)
-        )
-        final_log_likelihood = float(
-            np.sum(logsumexp(final_log_joint, axis=1))
-        )
-        candidate = {
-            "log_likelihood": final_log_likelihood,
-            "weights": weights.copy(),
-            "means": means.copy(),
-            "variances": variances.copy(),
-            "converged": converged,
-            "iterations": iteration,
-        }
-        if best is None or candidate["log_likelihood"] > best["log_likelihood"]:
-            best = candidate
-
-    if best is None:
-        raise RuntimeError("No two-component GMM fit was produced.")
-    return best
 
 
 def run_k1_null_experiment(config: ExperimentConfig) -> pd.DataFrame:

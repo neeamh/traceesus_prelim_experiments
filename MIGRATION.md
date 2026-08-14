@@ -1,0 +1,7 @@
+# EM unification migration
+
+The model layer now uses one missingness-aware expectation step and one missingness-aware maximization step in `traceesus/core/em.py`. Complete biomarker panels use the same implementation with an all-observed mask. Model-specific priors, path masks, initialization, convergence rules, floors, and RNG streams remain explicit in the frozen concrete model classes; the intended numerical change is only the floating-point summation order introduced by the shared masked matrix operations.
+
+Across the 1,084 summary and contrast estimands in `reports/em_unification_delta.csv`, 24 values changed at all and the maximum absolute difference was 4.583000645652646e-13, in the median K=2-minus-K=1 BIC summary. Across every comparable numeric CSV cell, including repeat-level fit diagnostics, the maximum observed difference was 3.637978807091713e-12. No value changed at its manuscript reporting precision, and no 95% confidence interval changed whether it included zero; therefore the list of reported values that moved is empty.
+
+`outputs_locked/` remains the untouched pre-unification v1 provenance tree, while `outputs_locked_v2/` is the exact baseline for the unified implementation. The golden tests now require exact equality to v2 and separately report v1-to-v2 differences without treating them as failures. Manuscript and proposal text were deliberately not edited because the reported values did not move; any future text update should describe the implementation migration and provenance distinction, not alter a scientific result.

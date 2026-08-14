@@ -37,16 +37,29 @@ from typing import Iterable, Sequence
 import numpy as np
 import pandas as pd
 import scipy
-from scipy.special import expit, logsumexp
+from scipy.special import logsumexp
 
 from traceesus.core.metrics import (
     adjusted_rand_index as _shared_adjusted_rand_index,
     evaluate_binary_posterior,
     expected_calibration_error as _shared_expected_calibration_error,
 )
+from traceesus.core.em import diagonal_gaussian_log_density, m_step
 from traceesus.core.io import write_manifest
 from traceesus.core.runner import latent_null_seed_ledger, ordered_map
-from traceesus.queries.posterior import anchor_order as _shared_anchor_order
+from traceesus.core.markers import BIOMARKER_DISPLAY_NAMES, BIOMARKER_NAMES, Biomarker
+from traceesus.models.adjusted_lcm import (
+    ConditionalLatentFit,
+    conditional_posterior,
+    fit_conditional_latent_model,
+)
+from traceesus.models.associative_lcm import (
+    AssociativeLatentClassFit,
+    associative_posterior,
+    fit_associative_latent_class_model,
+)
+from traceesus.models.oracle import oracle_posterior
+from traceesus.queries.posterior import anchor_order
 from traceesus.core.stats import (
     bic as _shared_bic,
     monte_carlo_summary,
@@ -63,40 +76,6 @@ class Mechanism(IntEnum):
     ATRIAL = 0
     COMPETING = 1
 
-
-class Biomarker(IntEnum):
-    """Column positions in the biomarker matrix.
-
-    The clinical names are primary.  The legacy members are aliases for the
-    same values (IntEnum treats duplicate values as aliases), so every cited
-    kernel path and locked output column keeps resolving unchanged.
-    """
-
-    NT_PROBNP = 0
-    PTFV1 = 1
-    COMPETING_VASCULAR = 2
-
-    # Legacy aliases — retained because locked outputs and kernel internals
-    # reference these names.  Do not remove.
-    NT_PROBNP_LIKE = 0
-    ATRIAL_ELECTRICAL = 1
-    COMPETING_SPECIFIC = 2
-
-
-# Provenance-locked strings: these appear in cited output files and metadata.
-# Figures should use BIOMARKER_DISPLAY_NAMES instead.
-BIOMARKER_NAMES = (
-    "NT-proBNP-like biomarker",
-    "Atrial electrical evidence",
-    "Competing-mechanism evidence",
-)
-
-# Clinically legible names for figures and tables only.
-BIOMARKER_DISPLAY_NAMES = (
-    "NT-proBNP",
-    "PTFV1",
-    "Competing-vascular",
-)
 
 ASSOCIATIVE_LCA = "Associative latent class model"
 ASSOCIATIVE_ADJUSTED = "Renal-adjusted associative latent class model"
@@ -127,43 +106,6 @@ class SimulatedCohort:
         """Expose fit-eligible columns while structurally excluding mechanism truth."""
 
         return np.column_stack((self.renal_dysfunction, self.biomarkers))
-
-
-@dataclass(frozen=True)
-class AssociativeLatentClassFit:
-    """Fit of p(Z) p(R|Z) p(B|Z), with shared diagonal biomarker variance."""
-
-    class_probability: np.ndarray
-    renal_probability_by_class: np.ndarray
-    class_means: np.ndarray
-    biomarker_variance: np.ndarray
-    log_likelihood: float
-    converged: bool
-    iterations: int
-    best_start: int
-    effective_class_fraction: np.ndarray
-    anchor_margin: float
-
-
-@dataclass(frozen=True)
-class ConditionalLatentFit:
-    """Fit of p(Z|R) p(B|Z,R) for either adjusted LCA or causal SCM."""
-
-    class_probability_by_renal: np.ndarray
-    class_means_at_renal_normal: np.ndarray
-    renal_effect: np.ndarray
-    renal_path_mask: np.ndarray
-    biomarker_variance: np.ndarray
-    log_likelihood: float
-    converged: bool
-    iterations: int
-    best_start: int
-    effective_class_fraction: np.ndarray
-    anchor_margin: float
-
-
-def _as_float_array(values: Sequence[float]) -> np.ndarray:
-    return np.asarray(values, dtype=float)
 
 
 def simulate_two_mechanism_cohort(
@@ -212,490 +154,18 @@ def _clip_probability(values: np.ndarray | float, config: FittingConfig) -> np.n
     return np.clip(values, config.probability_floor, 1.0 - config.probability_floor)
 
 
-def _shared_diagonal_gaussian_log_density(
-    biomarkers: np.ndarray,
-    means: np.ndarray,
-    variance: np.ndarray,
-) -> np.ndarray:
-    """Return n x K log densities under shared diagonal variances."""
-
-    residual = biomarkers[:, None, :] - means
-    return -0.5 * (
-        np.sum(residual**2 / variance[None, None, :], axis=2)
-        + np.sum(np.log(2.0 * np.pi * variance))
-    )
-
-
-def _initial_responsibilities(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    rng: np.random.Generator,
-    start_index: int,
-    config: FittingConfig,
-) -> np.ndarray:
-    """Create reproducible, non-degenerate two-class EM initializations."""
-
-    biomarker_sd = np.std(biomarkers, axis=0)
-    biomarker_sd = np.where(biomarker_sd > 1e-8, biomarker_sd, 1.0)
-    standardized = (biomarkers - np.mean(biomarkers, axis=0)) / biomarker_sd
-
-    if start_index == 0:
-        projection = (
-            standardized[:, Biomarker.ATRIAL_ELECTRICAL]
-            - standardized[:, Biomarker.COMPETING_SPECIFIC]
-        )
-    elif start_index == 1:
-        projection = standardized[:, Biomarker.NT_PROBNP_LIKE]
-    elif start_index == 2:
-        projection = 2.0 * (renal - np.mean(renal))
-    else:
-        direction = rng.normal(size=standardized.shape[1] + 1)
-        direction /= np.linalg.norm(direction)
-        projection = np.column_stack((standardized, renal)) @ direction
-
-    projection_sd = float(np.std(projection))
-    if projection_sd < 1e-8:
-        projection = rng.normal(size=biomarkers.shape[0])
-        projection_sd = float(np.std(projection))
-    probability_atrial = expit(1.5 * (projection - np.median(projection)) / projection_sd)
-    probability_atrial = _clip_probability(probability_atrial, config)
-    return np.column_stack((probability_atrial, 1.0 - probability_atrial))
-
-
 def _anchor_order(
     class_means: np.ndarray,
     biomarker_variance: np.ndarray,
 ) -> tuple[np.ndarray, float]:
-    """Orient latent labels without using simulated truth.
+    """Retain the legacy import path for the shared label-orientation query."""
 
-    The atrial class is the class with the larger prespecified anchor contrast:
-    atrial electrical evidence minus competing-mechanism evidence.  The
-    NT-proBNP-like biomarker is deliberately excluded from the label anchor
-    because it is the biomarker distorted by renal dysfunction.
-    """
-
-    return _shared_anchor_order(
+    return anchor_order(
         class_means,
         biomarker_variance,
-        atrial_electrical_index=Biomarker.ATRIAL_ELECTRICAL,
-        competing_specific_index=Biomarker.COMPETING_SPECIFIC,
+        atrial_electrical_index=Biomarker.PTFV1,
+        competing_specific_index=Biomarker.COMPETING_VASCULAR,
     )
-
-
-def _associative_m_step(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    responsibility: np.ndarray,
-    config: FittingConfig,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    effective_count = np.sum(responsibility, axis=0)
-    minimum_count = config.minimum_effective_class_fraction * biomarkers.shape[0]
-    if np.any(effective_count < minimum_count):
-        raise FloatingPointError("A latent class collapsed below the minimum size.")
-
-    smoothing = config.beta_prior_pseudocount
-    class_probability = (effective_count + smoothing) / (
-        biomarkers.shape[0] + 2.0 * smoothing
-    )
-    renal_probability = (
-        np.sum(responsibility * renal[:, None], axis=0) + smoothing
-    ) / (effective_count + 2.0 * smoothing)
-    renal_probability = _clip_probability(renal_probability, config)
-    class_means = (
-        responsibility.T @ biomarkers
-    ) / effective_count[:, None]
-    residual = biomarkers[:, None, :] - class_means[None, :, :]
-    variance = np.sum(
-        responsibility[:, :, None] * residual**2,
-        axis=(0, 1),
-    ) / biomarkers.shape[0]
-    variance = np.maximum(variance, config.variance_floor)
-    return class_probability, renal_probability, class_means, variance
-
-
-def _associative_e_step(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    class_probability: np.ndarray,
-    renal_probability: np.ndarray,
-    class_means: np.ndarray,
-    variance: np.ndarray,
-) -> tuple[np.ndarray, float]:
-    log_joint = (
-        np.log(class_probability)[None, :]
-        + renal[:, None] * np.log(renal_probability)[None, :]
-        + (1 - renal[:, None]) * np.log(1.0 - renal_probability)[None, :]
-        + _shared_diagonal_gaussian_log_density(
-            biomarkers,
-            class_means[None, :, :],
-            variance,
-        )
-    )
-    log_normalizer = logsumexp(log_joint, axis=1)
-    responsibility = np.exp(log_joint - log_normalizer[:, None])
-    return responsibility, float(np.sum(log_normalizer))
-
-
-def fit_associative_latent_class_model(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    rng: np.random.Generator,
-    config: FittingConfig,
-) -> AssociativeLatentClassFit:
-    """Fit the unlabeled associative two-class model by multi-start EM."""
-
-    best: dict[str, object] | None = None
-    for start_index in range(config.random_starts):
-        responsibility = _initial_responsibilities(
-            biomarkers,
-            renal,
-            rng,
-            start_index,
-            config,
-        )
-        converged = False
-        previous_log_likelihood = -np.inf
-
-        try:
-            for iteration in range(1, config.maximum_em_iterations + 1):
-                parameters = _associative_m_step(
-                    biomarkers,
-                    renal,
-                    responsibility,
-                    config,
-                )
-                responsibility, log_likelihood = _associative_e_step(
-                    biomarkers,
-                    renal,
-                    *parameters,
-                )
-                improvement = log_likelihood - previous_log_likelihood
-                tolerance = config.relative_log_likelihood_tolerance * (
-                    1.0 + abs(previous_log_likelihood)
-                )
-                if (
-                    np.isfinite(previous_log_likelihood)
-                    and improvement >= -1e-7
-                    and improvement <= tolerance
-                ):
-                    converged = True
-                    break
-                previous_log_likelihood = log_likelihood
-        except (FloatingPointError, np.linalg.LinAlgError):
-            continue
-
-        if best is None or log_likelihood > float(best["log_likelihood"]):
-            best = {
-                "parameters": parameters,
-                "responsibility": responsibility,
-                "log_likelihood": log_likelihood,
-                "converged": converged,
-                "iterations": iteration,
-                "best_start": start_index,
-            }
-
-    if best is None:
-        raise RuntimeError("All associative latent-class EM starts failed.")
-
-    class_probability, renal_probability, class_means, variance = best["parameters"]
-    order, anchor_margin = _anchor_order(class_means, variance)
-    responsibility = best["responsibility"][:, order]
-    effective_fraction = np.mean(responsibility, axis=0)
-
-    return AssociativeLatentClassFit(
-        class_probability=class_probability[order],
-        renal_probability_by_class=renal_probability[order],
-        class_means=class_means[order],
-        biomarker_variance=variance,
-        log_likelihood=float(best["log_likelihood"]),
-        converged=bool(best["converged"]),
-        iterations=int(best["iterations"]),
-        best_start=int(best["best_start"]),
-        effective_class_fraction=effective_fraction,
-        anchor_margin=anchor_margin,
-    )
-
-
-def associative_posterior(
-    fit: AssociativeLatentClassFit,
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-) -> np.ndarray:
-    """Evaluate the oriented associative fit without accepting simulator truth.
-
-    The fitted class order already encodes the prespecified biomarker anchor;
-    reorienting against labels here would leak truth into discovery.
-    """
-
-    responsibility, _ = _associative_e_step(
-        biomarkers,
-        renal,
-        fit.class_probability,
-        fit.renal_probability_by_class,
-        fit.class_means,
-        fit.biomarker_variance,
-    )
-    return responsibility
-
-
-def _weighted_component_regression(
-    response: np.ndarray,
-    renal: np.ndarray,
-    responsibility: np.ndarray,
-    include_renal_effect: bool,
-) -> tuple[np.ndarray, float]:
-    """Weighted M-step for two component intercepts and an optional shared slope."""
-
-    patient_count = response.shape[0]
-    component_count = responsibility.shape[1]
-    parameter_count = component_count + int(include_renal_effect)
-    design = np.zeros((patient_count * component_count, parameter_count), dtype=float)
-    tiled_response = np.tile(response, component_count)
-    weights = np.concatenate(
-        [responsibility[:, component] for component in range(component_count)]
-    )
-
-    for component in range(component_count):
-        row_slice = slice(component * patient_count, (component + 1) * patient_count)
-        design[row_slice, component] = 1.0
-        if include_renal_effect:
-            design[row_slice, -1] = renal
-
-    weighted_design = design * np.sqrt(weights)[:, None]
-    weighted_response = tiled_response * np.sqrt(weights)
-    coefficients, _, _, _ = np.linalg.lstsq(
-        weighted_design,
-        weighted_response,
-        rcond=None,
-    )
-    renal_effect = float(coefficients[-1]) if include_renal_effect else 0.0
-    return coefficients[:component_count], renal_effect
-
-
-def _conditional_m_step(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    responsibility: np.ndarray,
-    renal_path_mask: np.ndarray,
-    config: FittingConfig,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    effective_count = np.sum(responsibility, axis=0)
-    minimum_count = config.minimum_effective_class_fraction * biomarkers.shape[0]
-    if np.any(effective_count < minimum_count):
-        raise FloatingPointError("A latent class collapsed below the minimum size.")
-
-    smoothing = config.beta_prior_pseudocount
-    class_probability_by_renal = np.zeros((2, 2), dtype=float)
-    for renal_value in (0, 1):
-        stratum = renal == renal_value
-        stratum_count = int(np.sum(stratum))
-        if stratum_count == 0:
-            raise FloatingPointError("A renal stratum was empty.")
-        weighted_atrial_count = float(np.sum(responsibility[stratum, Mechanism.ATRIAL]))
-        atrial_probability = (weighted_atrial_count + smoothing) / (
-            stratum_count + 2.0 * smoothing
-        )
-        atrial_probability = float(_clip_probability(atrial_probability, config))
-        class_probability_by_renal[renal_value] = (
-            atrial_probability,
-            1.0 - atrial_probability,
-        )
-
-    class_means = np.zeros((2, biomarkers.shape[1]), dtype=float)
-    renal_effect = np.zeros(biomarkers.shape[1], dtype=float)
-    for biomarker_index in range(biomarkers.shape[1]):
-        class_means[:, biomarker_index], renal_effect[biomarker_index] = (
-            _weighted_component_regression(
-                biomarkers[:, biomarker_index],
-                renal,
-                responsibility,
-                bool(renal_path_mask[biomarker_index]),
-            )
-        )
-
-    conditional_means = (
-        class_means[None, :, :]
-        + renal[:, None, None] * renal_effect[None, None, :]
-    )
-    residual = biomarkers[:, None, :] - conditional_means
-    variance = np.sum(
-        responsibility[:, :, None] * residual**2,
-        axis=(0, 1),
-    ) / biomarkers.shape[0]
-    variance = np.maximum(variance, config.variance_floor)
-    return class_probability_by_renal, class_means, renal_effect, variance
-
-
-def _conditional_e_step(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    class_probability_by_renal: np.ndarray,
-    class_means: np.ndarray,
-    renal_effect: np.ndarray,
-    variance: np.ndarray,
-) -> tuple[np.ndarray, float]:
-    patient_means = (
-        class_means[None, :, :]
-        + renal[:, None, None] * renal_effect[None, None, :]
-    )
-    log_joint = (
-        np.log(class_probability_by_renal[renal])
-        + _shared_diagonal_gaussian_log_density(
-            biomarkers,
-            patient_means,
-            variance,
-        )
-    )
-    log_normalizer = logsumexp(log_joint, axis=1)
-    responsibility = np.exp(log_joint - log_normalizer[:, None])
-    return responsibility, float(np.sum(log_normalizer))
-
-
-def fit_conditional_latent_model(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    renal_path_mask: np.ndarray,
-    rng: np.random.Generator,
-    config: FittingConfig,
-) -> ConditionalLatentFit:
-    """Fit a two-class conditional mixture with prespecified renal paths."""
-
-    renal_path_mask = np.asarray(renal_path_mask, dtype=bool)
-    if renal_path_mask.shape != (biomarkers.shape[1],):
-        raise ValueError("renal_path_mask must contain one Boolean per biomarker.")
-
-    best: dict[str, object] | None = None
-    for start_index in range(config.random_starts):
-        responsibility = _initial_responsibilities(
-            biomarkers,
-            renal,
-            rng,
-            start_index,
-            config,
-        )
-        converged = False
-        previous_log_likelihood = -np.inf
-
-        try:
-            for iteration in range(1, config.maximum_em_iterations + 1):
-                parameters = _conditional_m_step(
-                    biomarkers,
-                    renal,
-                    responsibility,
-                    renal_path_mask,
-                    config,
-                )
-                responsibility, log_likelihood = _conditional_e_step(
-                    biomarkers,
-                    renal,
-                    *parameters,
-                )
-                improvement = log_likelihood - previous_log_likelihood
-                tolerance = config.relative_log_likelihood_tolerance * (
-                    1.0 + abs(previous_log_likelihood)
-                )
-                if (
-                    np.isfinite(previous_log_likelihood)
-                    and improvement >= -1e-7
-                    and improvement <= tolerance
-                ):
-                    converged = True
-                    break
-                previous_log_likelihood = log_likelihood
-        except (FloatingPointError, np.linalg.LinAlgError):
-            continue
-
-        if best is None or log_likelihood > float(best["log_likelihood"]):
-            best = {
-                "parameters": parameters,
-                "responsibility": responsibility,
-                "log_likelihood": log_likelihood,
-                "converged": converged,
-                "iterations": iteration,
-                "best_start": start_index,
-            }
-
-    if best is None:
-        raise RuntimeError("All conditional latent-model EM starts failed.")
-
-    class_probability_by_renal, class_means, renal_effect, variance = best["parameters"]
-    order, anchor_margin = _anchor_order(class_means, variance)
-    responsibility = best["responsibility"][:, order]
-    effective_fraction = np.mean(responsibility, axis=0)
-
-    return ConditionalLatentFit(
-        class_probability_by_renal=class_probability_by_renal[:, order],
-        class_means_at_renal_normal=class_means[order],
-        renal_effect=renal_effect,
-        renal_path_mask=renal_path_mask,
-        biomarker_variance=variance,
-        log_likelihood=float(best["log_likelihood"]),
-        converged=bool(best["converged"]),
-        iterations=int(best["iterations"]),
-        best_start=int(best["best_start"]),
-        effective_class_fraction=effective_fraction,
-        anchor_margin=anchor_margin,
-    )
-
-
-def conditional_posterior(
-    fit: ConditionalLatentFit,
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-) -> np.ndarray:
-    """Evaluate a renal-conditional fit using only observed biomarkers and renal status.
-
-    Truth is deliberately absent from the signature so it can enter only the
-    downstream simulation evaluation.
-    """
-
-    responsibility, _ = _conditional_e_step(
-        biomarkers,
-        renal,
-        fit.class_probability_by_renal,
-        fit.class_means_at_renal_normal,
-        fit.renal_effect,
-        fit.biomarker_variance,
-    )
-    return responsibility
-
-
-def oracle_posterior(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    renal_effect_sd: float,
-    config: SimulationConfig,
-) -> np.ndarray:
-    """Bayes posterior under the known simulator; used only as a ceiling."""
-
-    class_probability_by_renal = np.empty((2, 2), dtype=float)
-    class_probability_by_renal[0] = (
-        config.atrial_probability_if_renal_normal,
-        1.0 - config.atrial_probability_if_renal_normal,
-    )
-    class_probability_by_renal[1] = (
-        config.atrial_probability_if_renal_impaired,
-        1.0 - config.atrial_probability_if_renal_impaired,
-    )
-    class_means = np.stack(
-        (
-            _as_float_array(config.atrial_path_effects_sd),
-            _as_float_array(config.competing_path_effects_sd),
-        ),
-        axis=0,
-    )
-    renal_effect = np.zeros(len(BIOMARKER_NAMES), dtype=float)
-    renal_effect[Biomarker.NT_PROBNP_LIKE] = renal_effect_sd
-    variance = _as_float_array(config.biomarker_noise_sd) ** 2
-    responsibility, _ = _conditional_e_step(
-        biomarkers,
-        renal,
-        class_probability_by_renal,
-        class_means,
-        renal_effect,
-        variance,
-    )
-    return responsibility
 
 
 def _adjusted_rand_index(truth: np.ndarray, prediction: np.ndarray) -> float:
@@ -1024,7 +494,7 @@ def _fit_k1_associative(
             + (1 - renal) * np.log(1.0 - renal_probability)
         )
         + np.sum(
-            _shared_diagonal_gaussian_log_density(
+            diagonal_gaussian_log_density(
                 biomarkers,
                 means[None, :, :],
                 variance,
@@ -1042,25 +512,21 @@ def _fit_k1_conditional(
     config: FittingConfig,
 ) -> tuple[float, int]:
     responsibility = np.ones((biomarkers.shape[0], 1), dtype=float)
-    means = np.zeros((1, biomarkers.shape[1]), dtype=float)
-    renal_effect = np.zeros(biomarkers.shape[1], dtype=float)
-    for biomarker_index in range(biomarkers.shape[1]):
-        means[:, biomarker_index], renal_effect[biomarker_index] = (
-            _weighted_component_regression(
-                biomarkers[:, biomarker_index],
-                renal,
-                responsibility,
-                bool(renal_path_mask[biomarker_index]),
-            )
-        )
-    patient_mean = means[0] + renal[:, None] * renal_effect
-    variance = np.maximum(
-        np.mean((biomarkers - patient_mean) ** 2, axis=0),
+    emission = m_step(
+        biomarkers,
+        responsibility,
         config.variance_floor,
+        0.0,
+        nuisance_design=renal[:, None].astype(float),
+        path_mask=np.asarray(renal_path_mask, dtype=bool)[None, :],
     )
+    means = emission.class_means
+    renal_effect = emission.nuisance_effects[0]
+    patient_mean = means[0] + renal[:, None] * renal_effect
+    variance = emission.variance
     log_likelihood = float(
         np.sum(
-            _shared_diagonal_gaussian_log_density(
+            diagonal_gaussian_log_density(
                 biomarkers,
                 patient_mean[:, None, :],
                 variance,

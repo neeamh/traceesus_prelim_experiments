@@ -1,0 +1,59 @@
+{
+  "config": {
+    "seed": 20260728,
+    "patients_per_repeat": 1000,
+    "repeats_per_level": 500,
+    "renal_prevalence": 0.3,
+    "atrial_log_odds_when_renal_normal": 0.0,
+    "renal_to_atrial_log_odds": -0.4,
+    "confounding_strengths_sd": [
+      0.0,
+      0.75,
+      1.5,
+      2.25
+    ],
+    "confounding_labels": [
+      "None\n(0 SD)",
+      "Weak\n(0.75 SD)",
+      "Moderate\n(1.50 SD)",
+      "Strong\n(2.25 SD)"
+    ],
+    "mechanism_effects": [
+      [
+        1.2,
+        0.8,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "biomarker_noise_sd": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "counterfactual_disablement_weight": 0.5,
+    "counterfactual_sufficiency_weight": 0.5,
+    "null_repeats": 500,
+    "null_patients_per_repeat": 1000,
+    "null_renal_effect_sd": 2.25,
+    "null_gmm_starts": 5,
+    "null_gmm_max_iter": 400,
+    "null_min_component_weight": 0.1,
+    "gmm_variance_floor": 0.05
+  },
+  "software_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "primary_estimand": "Expected top-1 true-mechanism ranking accuracy across repeated simulated studies.",
+  "subgroup_estimand": "Expected false atrial classification among renal-impaired patients whose true mechanism is competing.",
+  "ci_definition": "Two-sided 95% t confidence interval for the mean across paired simulation repeats; empirical 2.5th and 97.5th repeat quantiles are saved separately.",
+  "null_definition": "False K=2 selection rate when truth is one homogeneous Gaussian regime after subtracting the prespecified renal biomarker path."
+}

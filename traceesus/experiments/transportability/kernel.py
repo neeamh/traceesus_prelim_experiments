@@ -24,11 +24,12 @@ from typing import Iterable, Sequence
 import numpy as np
 import pandas as pd
 import scipy
-from scipy.special import expit, logit, logsumexp
+from scipy.special import logit
 
 from traceesus.core.io import write_manifest
+from traceesus.core.em import e_step
 from traceesus.core.runner import ordered_map, transport_seed_ledger
-from traceesus.queries.posterior import anchor_order as _shared_anchor_order
+from traceesus.queries.posterior import anchor_order
 from traceesus.core.stats import (
     monte_carlo_summary,
     paired_mean_contrast,
@@ -39,6 +40,13 @@ from traceesus.simulators.multi_hospital import (
     TransportSimulationTruth,
 )
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
+from traceesus.models.modular_causal_scm import (
+    MissingGaussianMixtureFit,
+    fit_missing_gaussian_mixture,
+    fit_nuisance_paths,
+    missing_gmm_posterior,
+    remove_nuisance_paths,
+)
 
 from traceesus.experiments.endotype_discovery.kernel import (
     BIOMARKER_NAMES,
@@ -89,25 +97,6 @@ class HospitalCohort:
     hospital: HospitalSpec
 
 
-@dataclass(frozen=True)
-class MissingGaussianMixtureFit:
-    """Retain an oriented unlabeled mixture fit under biomarker missingness.
-
-    The anchor margin records whether the prespecified biological contrast can
-    orient latent labels without consulting simulator truth.
-    """
-
-    class_probability: np.ndarray
-    class_means: np.ndarray
-    biomarker_variance: np.ndarray
-    log_likelihood: float
-    converged: bool
-    iterations: int
-    best_start: int
-    effective_class_fraction: np.ndarray
-    anchor_margin: float
-
-
 def simulate_hospital(
     rng: np.random.Generator,
     patient_count: int,
@@ -147,263 +136,21 @@ def assay_calibrate(cohort: HospitalCohort) -> np.ndarray:
     return (cohort.raw_biomarkers - offset) / scale
 
 
-def fit_nuisance_paths(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    inflammation: np.ndarray,
-    renal_path_mask: np.ndarray,
-    inflammation_path_mask: np.ndarray,
-) -> np.ndarray:
-    """Estimate label-free nuisance slopes biomarker by biomarker.
-
-    The estimator is valid here because renal dysfunction and background
-    inflammation are generated independently of the true mechanism.
-    """
-
-    renal_path_mask = np.asarray(renal_path_mask, dtype=bool)
-    inflammation_path_mask = np.asarray(inflammation_path_mask, dtype=bool)
-    slopes = np.zeros((2, biomarkers.shape[1]), dtype=float)
-    for biomarker_index in range(biomarkers.shape[1]):
-        observed = np.isfinite(biomarkers[:, biomarker_index])
-        columns = [np.ones(int(np.sum(observed)), dtype=float)]
-        column_map: list[int] = []
-        if renal_path_mask[biomarker_index]:
-            columns.append(renal[observed].astype(float))
-            column_map.append(0)
-        if inflammation_path_mask[biomarker_index]:
-            columns.append(inflammation[observed].astype(float))
-            column_map.append(1)
-        design = np.column_stack(columns)
-        response = biomarkers[observed, biomarker_index]
-        coefficients, _, _, _ = np.linalg.lstsq(design, response, rcond=None)
-        for coefficient_index, slope_row in enumerate(column_map, start=1):
-            slopes[slope_row, biomarker_index] = coefficients[coefficient_index]
-    return slopes
-
-
-def remove_nuisance_paths(
-    biomarkers: np.ndarray,
-    renal: np.ndarray,
-    inflammation: np.ndarray,
-    slopes: np.ndarray,
-) -> np.ndarray:
-    """Residualize prespecified site-varying paths while preserving missing values.
-
-    This modular step isolates the stable mechanism signal; changing its matrix
-    operation would change both the causal estimand and floating-point order.
-    """
-
-    covariates = np.column_stack((renal, inflammation))
-    return biomarkers - covariates @ slopes
-
-
-def _initial_responsibility(
-    biomarkers: np.ndarray,
-    rng: np.random.Generator,
-    start_index: int,
-    fitting: FittingConfig,
-) -> np.ndarray:
-    column_mean = np.nanmean(biomarkers, axis=0)
-    column_sd = np.nanstd(biomarkers, axis=0)
-    column_sd = np.where(column_sd > 1e-8, column_sd, 1.0)
-    standardized = (biomarkers - column_mean) / column_sd
-    standardized = np.where(np.isfinite(standardized), standardized, 0.0)
-    if start_index == 0:
-        projection = (
-            standardized[:, Biomarker.ATRIAL_ELECTRICAL]
-            - standardized[:, Biomarker.COMPETING_SPECIFIC]
-        )
-    elif start_index == 1:
-        projection = standardized[:, Biomarker.NT_PROBNP_LIKE]
-    else:
-        direction = rng.normal(size=standardized.shape[1])
-        direction /= np.linalg.norm(direction)
-        projection = standardized @ direction
-    projection_sd = max(float(np.std(projection)), 1e-8)
-    probability = expit(1.5 * (projection - np.median(projection)) / projection_sd)
-    probability = np.clip(
-        probability,
-        fitting.probability_floor,
-        1.0 - fitting.probability_floor,
-    )
-    return np.column_stack((probability, 1.0 - probability))
-
-
-def _missing_gmm_m_step(
-    biomarkers: np.ndarray,
-    responsibility: np.ndarray,
-    fitting: FittingConfig,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    patient_count, biomarker_count = biomarkers.shape
-    effective_count = np.sum(responsibility, axis=0)
-    if np.any(
-        effective_count < fitting.minimum_effective_class_fraction * patient_count
-    ):
-        raise FloatingPointError("A latent class collapsed.")
-    smoothing = fitting.beta_prior_pseudocount
-    class_probability = (effective_count + smoothing) / (
-        patient_count + 2.0 * smoothing
-    )
-    observed = np.isfinite(biomarkers)
-    class_means = np.zeros((2, biomarker_count), dtype=float)
-    for component in range(2):
-        for biomarker_index in range(biomarker_count):
-            available = observed[:, biomarker_index]
-            weights = responsibility[available, component]
-            denominator = float(np.sum(weights))
-            if denominator <= 1e-8:
-                raise FloatingPointError("No effective observations for a class marker.")
-            class_means[component, biomarker_index] = float(
-                np.sum(weights * biomarkers[available, biomarker_index]) / denominator
-            )
-
-    variance = np.zeros(biomarker_count, dtype=float)
-    for biomarker_index in range(biomarker_count):
-        available = observed[:, biomarker_index]
-        residual = (
-            biomarkers[available, biomarker_index, None]
-            - class_means[None, :, biomarker_index]
-        )
-        numerator = np.sum(responsibility[available] * residual**2)
-        denominator = np.sum(responsibility[available])
-        variance[biomarker_index] = numerator / denominator
-    variance = np.maximum(variance, fitting.variance_floor)
-    return class_probability, class_means, variance
-
-
-def _missing_gmm_e_step(
-    biomarkers: np.ndarray,
-    class_probability: np.ndarray,
-    class_means: np.ndarray,
-    variance: np.ndarray,
-) -> tuple[np.ndarray, float]:
-    observed = np.isfinite(biomarkers)
-    filled = np.where(observed, biomarkers, 0.0)
-    log_joint = np.broadcast_to(
-        np.log(class_probability)[None, :],
-        (biomarkers.shape[0], 2),
-    ).copy()
-    for component in range(2):
-        residual = filled - class_means[component]
-        contribution = -0.5 * (
-            residual**2 / variance + np.log(2.0 * np.pi * variance)
-        )
-        log_joint[:, component] += np.sum(
-            np.where(observed, contribution, 0.0),
-            axis=1,
-        )
-    normalizer = logsumexp(log_joint, axis=1)
-    responsibility = np.exp(log_joint - normalizer[:, None])
-    return responsibility, float(np.sum(normalizer))
-
-
 def _anchor_fit(
     class_probability: np.ndarray,
     class_means: np.ndarray,
     variance: np.ndarray,
     responsibility: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
-    order, margin = _shared_anchor_order(
+    """Retain the legacy import path for the shared label-orientation query."""
+
+    order, margin = anchor_order(
         class_means,
         variance,
-        atrial_electrical_index=Biomarker.ATRIAL_ELECTRICAL,
-        competing_specific_index=Biomarker.COMPETING_SPECIFIC,
+        atrial_electrical_index=Biomarker.PTFV1,
+        competing_specific_index=Biomarker.COMPETING_VASCULAR,
     )
-    return (
-        class_probability[order],
-        class_means[order],
-        responsibility[:, order],
-        margin,
-    )
-
-
-def fit_missing_gaussian_mixture(
-    biomarkers: np.ndarray,
-    rng: np.random.Generator,
-    fitting: FittingConfig,
-) -> MissingGaussianMixtureFit:
-    """Fit a two-component diagonal Gaussian mixture with missing-data likelihood."""
-
-    best: dict[str, object] | None = None
-    for start_index in range(fitting.random_starts):
-        responsibility = _initial_responsibility(
-            biomarkers,
-            rng,
-            start_index,
-            fitting,
-        )
-        previous_log_likelihood = -np.inf
-        converged = False
-        try:
-            for iteration in range(1, fitting.maximum_em_iterations + 1):
-                parameters = _missing_gmm_m_step(
-                    biomarkers,
-                    responsibility,
-                    fitting,
-                )
-                responsibility, log_likelihood = _missing_gmm_e_step(
-                    biomarkers,
-                    *parameters,
-                )
-                improvement = log_likelihood - previous_log_likelihood
-                tolerance = fitting.relative_log_likelihood_tolerance * (
-                    1.0 + abs(previous_log_likelihood)
-                )
-                if (
-                    np.isfinite(previous_log_likelihood)
-                    and improvement >= -1e-7
-                    and improvement <= tolerance
-                ):
-                    converged = True
-                    break
-                previous_log_likelihood = log_likelihood
-        except (FloatingPointError, np.linalg.LinAlgError):
-            continue
-        if best is None or log_likelihood > float(best["log_likelihood"]):
-            best = {
-                "parameters": parameters,
-                "responsibility": responsibility,
-                "log_likelihood": log_likelihood,
-                "converged": converged,
-                "iterations": iteration,
-                "best_start": start_index,
-            }
-    if best is None:
-        raise RuntimeError("All missing-data mixture starts failed.")
-
-    class_probability, class_means, variance = best["parameters"]
-    class_probability, class_means, responsibility, margin = _anchor_fit(
-        class_probability,
-        class_means,
-        variance,
-        best["responsibility"],
-    )
-    return MissingGaussianMixtureFit(
-        class_probability=class_probability,
-        class_means=class_means,
-        biomarker_variance=variance,
-        log_likelihood=float(best["log_likelihood"]),
-        converged=bool(best["converged"]),
-        iterations=int(best["iterations"]),
-        best_start=int(best["best_start"]),
-        effective_class_fraction=np.mean(responsibility, axis=0),
-        anchor_margin=margin,
-    )
-
-
-def missing_gmm_posterior(
-    fit: MissingGaussianMixtureFit,
-    biomarkers: np.ndarray,
-) -> np.ndarray:
-    """Evaluate the oriented mixture with missingness integrated exactly as in EM."""
-
-    responsibility, _ = _missing_gmm_e_step(
-        biomarkers,
-        fit.class_probability,
-        fit.class_means,
-        fit.biomarker_variance,
-    )
-    return responsibility
+    return class_probability[order], class_means[order], responsibility[:, order], margin
 
 
 def target_oracle_posterior(
@@ -437,9 +184,9 @@ def target_oracle_posterior(
     class_probability = np.asarray(
         (config.atrial_probability, 1.0 - config.atrial_probability)
     )
-    posterior, _ = _missing_gmm_e_step(
+    posterior, _ = e_step(
         residualized,
-        class_probability,
+        np.log(class_probability)[None, :],
         class_means,
         variance,
     )
