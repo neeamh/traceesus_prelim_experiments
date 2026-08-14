@@ -1,4 +1,4 @@
-"""Cross-hospital simulator adapters with structural truth separation."""
+"""Store transport cohorts and deterministic assay-calibration helpers."""
 
 from __future__ import annotations
 
@@ -6,15 +6,11 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
-from numpy.random import Generator
-
 from traceesus.core.simulator import (
     Cohort,
-    SimulatedData,
     SimulationTruth,
-    Simulator,
 )
-from traceesus.experiments.transportability import kernel
+from configs.transportability import HospitalSpec
 
 
 @dataclass(frozen=True)
@@ -26,7 +22,7 @@ class MultiHospitalCohort(Cohort):
     a model cannot acquire simulator truth through its standard fit input.
     """
 
-    hospital: kernel.HospitalSpec | None = None
+    hospital: HospitalSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -46,40 +42,6 @@ class TransportSimulationTruth(SimulationTruth):
     """Evaluation-only mechanism labels and pre-missingness calibrated values."""
 
     complete_calibrated_biomarkers: np.ndarray | None = None
-
-
-@dataclass(frozen=True)
-class MultiHospitalSimulator(Simulator):
-    """Generate one hospital using the proposal-locked draw order."""
-
-    hospital: kernel.HospitalSpec
-    config: kernel.TransportSimulationConfig
-
-    def simulate(self, rng: Generator, patient_count: int) -> SimulatedData:
-        """Delegate all draws to the frozen kernel, then separate truth fields."""
-
-        generated = kernel.simulate_hospital(
-            rng,
-            patient_count,
-            self.hospital,
-            self.config,
-        )
-        observed = MultiHospitalCohort(
-            biomarkers=generated.raw_biomarkers,
-            covariates={
-                "renal_dysfunction": generated.renal_dysfunction,
-                "background_inflammation": generated.background_inflammation,
-            },
-            measurement_indicators=generated.biomarker_observed,
-            hospital=generated.hospital,
-        )
-        truth = TransportSimulationTruth(
-            mechanism=generated.true_mechanism,
-            complete_calibrated_biomarkers=(
-                generated.complete_calibrated_biomarkers
-            ),
-        )
-        return SimulatedData(observed=observed, truth=truth)
 
 
 def assay_calibrate_observed(data: Cohort) -> np.ndarray:
@@ -118,11 +80,10 @@ def pool_source_hospitals(
     )
 
 
-__all__ = [
+__all__ = (
     "MultiHospitalCohort",
-    "MultiHospitalSimulator",
     "SourceHospitalPool",
     "TransportSimulationTruth",
     "assay_calibrate_observed",
     "pool_source_hospitals",
-]
+)

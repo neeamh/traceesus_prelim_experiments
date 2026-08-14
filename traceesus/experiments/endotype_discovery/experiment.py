@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import platform
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -13,7 +12,7 @@ import pandas as pd
 import scipy
 
 from traceesus.core.experiment import Experiment
-from traceesus.core.io import write_json, write_manifest
+from traceesus.core.io import write_json, write_manifest, write_standard_tables
 from traceesus.models import (
     AdjustedLatentClassModel,
     AssociativeLatentClassModel,
@@ -43,6 +42,60 @@ class EndotypeDiscoveryArtifacts:
     validation_checks: dict[str, object] | None = None
     metadata: dict[str, object] | None = None
     manifest: dict[str, object] | None = None
+
+
+def _standard_tables(
+    artifacts: EndotypeDiscoveryArtifacts,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Reshape legacy discovery results into the additive tidy contract."""
+
+    identifiers = ["renal_effect_sd", "repeat", "method"]
+    metrics = [
+        column for column in artifacts.raw_metrics.columns if column not in identifiers
+    ]
+    raw_long = artifacts.raw_metrics.melt(
+        id_vars=identifiers,
+        value_vars=metrics,
+        var_name="metric",
+        value_name="value",
+    )
+    summary = artifacts.summary[
+        [
+            "renal_effect_sd", "method", "metric", "mean", "ci95_low",
+            "ci95_high", "monte_carlo_standard_error", "repeat_count",
+        ]
+    ].copy()
+    contrasts = artifacts.contrasts.copy()
+    contrasts["contrast"] = (
+        contrasts["difference_definition"] + ": " + contrasts["comparator"]
+    )
+    contrast_columns = [
+        "renal_effect_sd", "metric", "contrast", "mean_difference",
+        "ci95_low", "ci95_high", "repeat_count",
+    ]
+    return raw_long, summary, contrasts[contrast_columns]
+
+
+def _example_table(example: dict[str, object]) -> pd.DataFrame:
+    """Flatten the illustrative patient into a CSV-only plotting input."""
+
+    observed = example["observed_biomarkers"]
+    contribution = example["causal_estimated_renal_contribution"]
+    neutralized = example["causal_renal_neutralized_biomarkers"]
+    rows = []
+    for biomarker in observed:
+        rows.append(
+            {
+                "biomarker": biomarker,
+                "observed_value": observed[biomarker],
+                "renal_contribution": contribution[biomarker],
+                "renal_neutralized_value": neutralized[biomarker],
+                "associative_atrial_probability": example["associative_atrial_probability"],
+                "causal_atrial_probability": example["causal_atrial_probability"],
+                "renal_effect_sd": example["renal_effect_sd"],
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 class EndotypeDiscoveryExperiment(Experiment):
@@ -144,24 +197,10 @@ class EndotypeDiscoveryExperiment(Experiment):
         return artifacts
 
     def plot(self) -> None:
-        """Regenerate all three historical latent-discovery figure pairs."""
-
-        if self.artifacts is None or self.artifacts.summary is None:
-            raise RuntimeError("summarize() must precede plot().")
-        kernel.plot_primary_figure(
-            self.artifacts.summary, self.config, self.output_directory
-        )
-        kernel.plot_control_figure(
-            self.artifacts.summary,
-            self.artifacts.null_summary,
-            self.config,
-            self.output_directory,
-        )
-        kernel.plot_example_patient(self.artifacts.example, self.output_directory)
+        """Do nothing; figures are rendered by ``notebooks/figures.ipynb``."""
 
     def write(self) -> dict[str, Any]:
         """Write exact legacy tables/JSON plus an additive checksum manifest."""
-
         if self.artifacts is None or self.artifacts.summary is None:
             raise RuntimeError("summarize() must precede write().")
         artifacts = self.artifacts
@@ -185,6 +224,14 @@ class EndotypeDiscoveryExperiment(Experiment):
         )
         artifacts.null_summary.to_csv(
             self.output_directory / "k1_null_summary.csv", index=False
+        )
+        raw_long, summary, contrasts = _standard_tables(artifacts)
+        write_standard_tables(
+            self.output_directory, self.name, raw_long, summary, contrasts
+        )
+        _example_table(artifacts.example).to_csv(
+            self.output_directory / "endotype_discovery_example_patient.csv",
+            index=False,
         )
         write_json(self.output_directory / "example_patient.json", artifacts.example)
         write_json(
@@ -212,17 +259,3 @@ class EndotypeDiscoveryExperiment(Experiment):
             "metadata": artifacts.metadata,
             "manifest": artifacts.manifest,
         }
-
-    def figures_only(self) -> None:
-        """Regenerate figures from existing compatibility outputs without simulation."""
-
-        summary = pd.read_csv(self.output_directory / "recovery_summary.csv")
-        null_summary = pd.read_csv(self.output_directory / "k1_null_summary.csv")
-        example = json.loads(
-            (self.output_directory / "example_patient.json").read_text(encoding="utf-8")
-        )
-        kernel.plot_primary_figure(summary, self.config, self.output_directory)
-        kernel.plot_control_figure(
-            summary, null_summary, self.config, self.output_directory
-        )
-        kernel.plot_example_patient(example, self.output_directory)

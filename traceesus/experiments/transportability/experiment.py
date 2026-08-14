@@ -12,7 +12,7 @@ import pandas as pd
 import scipy
 
 from traceesus.core.experiment import Experiment
-from traceesus.core.io import write_json, write_manifest
+from traceesus.core.io import write_json, write_manifest, write_standard_tables
 from traceesus.core.model import Model, assert_truth_free_fit_interfaces
 from traceesus.models.modular_causal_scm import (
     FrozenCausalSCM,
@@ -51,6 +51,38 @@ class TransportabilityArtifacts:
     ablation: TransportRunArtifacts
     exact_no_shift: TransportRunArtifacts
     manifest: dict[str, object] | None = None
+
+
+def _standard_tables(
+    artifacts: TransportRunArtifacts,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Reshape the main transport curve into the additive tidy contract."""
+
+    identifiers = ["shift_index", "shift", "repeat", "method"]
+    metrics = [
+        column for column in artifacts.raw_metrics.columns if column not in identifiers
+    ]
+    raw_long = artifacts.raw_metrics.melt(
+        id_vars=identifiers,
+        value_vars=metrics,
+        var_name="metric",
+        value_name="value",
+    )
+    summary = artifacts.summary[
+        [
+            "shift_index", "shift", "method", "metric", "mean", "ci95_low",
+            "ci95_high", "monte_carlo_standard_error", "repeat_count",
+        ]
+    ].copy()
+    contrasts = artifacts.contrasts.copy()
+    contrasts["contrast"] = (
+        contrasts["difference_definition"] + ": " + contrasts["comparator"]
+    )
+    contrast_columns = [
+        "shift_index", "shift", "metric", "contrast", "mean_difference",
+        "ci95_low", "ci95_high", "repeat_count",
+    ]
+    return raw_long, summary, contrasts[contrast_columns]
 
 
 def _exact_no_shift_config(
@@ -111,6 +143,52 @@ def _summarize_specification(
         artifacts.negative_control,
         artifacts.config,
     )
+
+
+def _write_main(directory: Path, artifacts: TransportRunArtifacts) -> None:
+    """Persist main-curve compatibility products in their historical shape."""
+
+    artifacts.raw_metrics.to_csv(directory / "raw_transport_metrics.csv", index=False)
+    artifacts.summary.to_csv(directory / "transport_summary.csv", index=False)
+    artifacts.contrasts.to_csv(directory / "paired_transport_contrasts.csv", index=False)
+    artifacts.degradation.to_csv(directory / "transport_degradation.csv", index=False)
+    artifacts.fit_diagnostics.to_csv(directory / "fit_diagnostics.csv", index=False)
+    artifacts.target_diagnostics.to_csv(
+        directory / "target_calibration_diagnostics.csv", index=False
+    )
+    write_json(directory / "negative_control.json", artifacts.negative_control)
+    write_json(directory / "validation_checks.json", artifacts.validation_checks)
+    write_json(directory / "metadata.json", artifacts.metadata)
+
+
+def _write_ablation(directory: Path, artifacts: TransportRunArtifacts) -> None:
+    """Persist one-factor ablation products without inventing new legacy JSON."""
+
+    artifacts.raw_metrics.to_csv(directory / "raw_ablation_metrics.csv", index=False)
+    artifacts.summary.to_csv(directory / "ablation_summary.csv", index=False)
+    artifacts.contrasts.to_csv(directory / "paired_ablation_contrasts.csv", index=False)
+    artifacts.changes.to_csv(directory / "ablation_accuracy_changes.csv", index=False)
+    artifacts.fit_diagnostics.to_csv(directory / "fit_diagnostics.csv", index=False)
+    artifacts.target_diagnostics.to_csv(
+        directory / "target_calibration_diagnostics.csv", index=False
+    )
+    write_json(directory / "negative_control.json", artifacts.negative_control)
+    write_json(directory / "validation_checks.json", artifacts.validation_checks)
+
+
+def _write_exact(directory: Path, artifacts: TransportRunArtifacts) -> None:
+    """Persist the literal identical-distribution negative control products."""
+
+    artifacts.raw_metrics.to_csv(directory / "raw_metrics.csv", index=False)
+    artifacts.summary.to_csv(directory / "summary.csv", index=False)
+    artifacts.contrasts.to_csv(directory / "paired_contrasts.csv", index=False)
+    artifacts.fit_diagnostics.to_csv(directory / "fit_diagnostics.csv", index=False)
+    artifacts.target_diagnostics.to_csv(
+        directory / "target_calibration_diagnostics.csv", index=False
+    )
+    write_json(directory / "negative_control.json", artifacts.negative_control)
+    write_json(directory / "validation_checks.json", artifacts.validation_checks)
+    write_json(directory / "metadata.json", artifacts.metadata)
 
 
 class TransportabilityExperiment(Experiment):
@@ -220,26 +298,7 @@ class TransportabilityExperiment(Experiment):
         return artifacts
 
     def plot(self) -> None:
-        """Regenerate both main control figures and the shift-ablation figure."""
-
-        if self.artifacts is None or self.artifacts.main.summary is None:
-            raise RuntimeError("summarize() must precede plot().")
-        artifacts = self.artifacts
-        kernel.plot_transport_figure(
-            artifacts.main.summary,
-            self.config,
-            self.output_directory,
-        )
-        kernel.plot_transport_controls(
-            artifacts.main.summary,
-            artifacts.main.degradation,
-            self.config,
-            self.output_directory,
-        )
-        kernel.plot_ablation_figure(
-            artifacts.ablation.changes,
-            self.output_directory / "ablations",
-        )
+        """Do nothing; figures are rendered by ``notebooks/figures.ipynb``."""
 
     def write(self) -> dict[str, Any]:
         """Write exact legacy filenames and JSON shapes plus one root manifest."""
@@ -247,9 +306,16 @@ class TransportabilityExperiment(Experiment):
         if self.artifacts is None or self.artifacts.main.summary is None:
             raise RuntimeError("summarize() must precede write().")
         artifacts = self.artifacts
-        self._write_main(artifacts.main)
-        self._write_ablation(artifacts.ablation)
-        self._write_exact(artifacts.exact_no_shift)
+        _write_main(self.output_directory, artifacts.main)
+        raw_long, summary, contrasts = _standard_tables(artifacts.main)
+        write_standard_tables(
+            self.output_directory, self.name, raw_long, summary, contrasts
+        )
+        _write_ablation(self.output_directory / "ablations", artifacts.ablation)
+        _write_exact(
+            self.output_directory / "exact_no_shift_control",
+            artifacts.exact_no_shift,
+        )
         artifacts.manifest = write_manifest(
             self.output_directory,
             experiment=self.name,
@@ -271,90 +337,5 @@ class TransportabilityExperiment(Experiment):
             "exact_no_shift_control": artifacts.exact_no_shift,
             "manifest": artifacts.manifest,
         }
-
-    def _write_main(self, artifacts: TransportRunArtifacts) -> None:
-        """Persist main-curve compatibility products in their historical shape."""
-
-        artifacts.raw_metrics.to_csv(
-            self.output_directory / "raw_transport_metrics.csv", index=False
-        )
-        artifacts.summary.to_csv(
-            self.output_directory / "transport_summary.csv", index=False
-        )
-        artifacts.contrasts.to_csv(
-            self.output_directory / "paired_transport_contrasts.csv", index=False
-        )
-        artifacts.degradation.to_csv(
-            self.output_directory / "transport_degradation.csv", index=False
-        )
-        artifacts.fit_diagnostics.to_csv(
-            self.output_directory / "fit_diagnostics.csv", index=False
-        )
-        artifacts.target_diagnostics.to_csv(
-            self.output_directory / "target_calibration_diagnostics.csv", index=False
-        )
-        write_json(
-            self.output_directory / "negative_control.json",
-            artifacts.negative_control,
-        )
-        write_json(
-            self.output_directory / "validation_checks.json",
-            artifacts.validation_checks,
-        )
-        write_json(self.output_directory / "metadata.json", artifacts.metadata)
-
-    def _write_ablation(self, artifacts: TransportRunArtifacts) -> None:
-        """Persist one-factor ablation products without inventing new legacy JSON."""
-
-        directory = self.output_directory / "ablations"
-        artifacts.raw_metrics.to_csv(directory / "raw_ablation_metrics.csv", index=False)
-        artifacts.summary.to_csv(directory / "ablation_summary.csv", index=False)
-        artifacts.contrasts.to_csv(
-            directory / "paired_ablation_contrasts.csv", index=False
-        )
-        artifacts.changes.to_csv(
-            directory / "ablation_accuracy_changes.csv", index=False
-        )
-        artifacts.fit_diagnostics.to_csv(directory / "fit_diagnostics.csv", index=False)
-        artifacts.target_diagnostics.to_csv(
-            directory / "target_calibration_diagnostics.csv", index=False
-        )
-        write_json(directory / "negative_control.json", artifacts.negative_control)
-        write_json(directory / "validation_checks.json", artifacts.validation_checks)
-
-    def _write_exact(self, artifacts: TransportRunArtifacts) -> None:
-        """Persist the literal identical-distribution negative control products."""
-
-        directory = self.output_directory / "exact_no_shift_control"
-        artifacts.raw_metrics.to_csv(directory / "raw_metrics.csv", index=False)
-        artifacts.summary.to_csv(directory / "summary.csv", index=False)
-        artifacts.contrasts.to_csv(directory / "paired_contrasts.csv", index=False)
-        artifacts.fit_diagnostics.to_csv(directory / "fit_diagnostics.csv", index=False)
-        artifacts.target_diagnostics.to_csv(
-            directory / "target_calibration_diagnostics.csv", index=False
-        )
-        write_json(directory / "negative_control.json", artifacts.negative_control)
-        write_json(directory / "validation_checks.json", artifacts.validation_checks)
-        write_json(directory / "metadata.json", artifacts.metadata)
-
-    def figures_only(self) -> None:
-        """Regenerate all transport figures from existing compatibility tables."""
-
-        summary = pd.read_csv(self.output_directory / "transport_summary.csv")
-        degradation = pd.read_csv(
-            self.output_directory / "transport_degradation.csv"
-        )
-        changes = pd.read_csv(
-            self.output_directory / "ablations" / "ablation_accuracy_changes.csv"
-        )
-        kernel.plot_transport_figure(summary, self.config, self.output_directory)
-        kernel.plot_transport_controls(
-            summary,
-            degradation,
-            self.config,
-            self.output_directory,
-        )
-        kernel.plot_ablation_figure(changes, self.output_directory / "ablations")
-
 
 __all__ = ["TransportabilityExperiment"]

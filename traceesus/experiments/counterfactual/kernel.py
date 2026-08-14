@@ -24,10 +24,10 @@ import json
 import platform
 from time import perf_counter
 from dataclasses import asdict, dataclass, replace
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy
@@ -41,6 +41,7 @@ from traceesus.core.stats import (
 )
 from traceesus.core.runner import nested_seed_sequence_ledger, seed_sequence_ledger
 from traceesus.core.io import write_manifest
+from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 from configs.counterfactual import ExperimentConfig
 
 
@@ -67,25 +68,18 @@ def simulate_two_mechanism_study(
     renal_effect_sd: float,
     rng: np.random.Generator,
 ) -> dict[str, np.ndarray]:
-    """Simulate one study with stored ground-truth mechanism labels."""
+    """Adapt the shared simulator to the historical preliminary-study mapping."""
 
-    n = config.patients_per_repeat
-    renal = rng.binomial(1, config.renal_prevalence, size=n).astype(int)
-    atrial_prior = atrial_prior_given_renal(renal, config)
-    mechanism = np.where(rng.random(n) < atrial_prior, ATRIAL, COMPETING)
-
-    effects = np.asarray(config.mechanism_effects, dtype=float)
-    noise_sd = np.asarray(config.biomarker_noise_sd, dtype=float)
-    renal_contribution = np.zeros((n, 3), dtype=float)
-    renal_contribution[:, 0] = renal_effect_sd * renal
-    biomarker_mean = effects[mechanism] + renal_contribution
-    biomarkers = biomarker_mean + rng.normal(size=(n, 3)) * noise_sd
+    generated = TwoMechanismSimulator(config, renal_effect_sd).simulate(
+        rng, config.patients_per_repeat
+    )
+    renal = generated.observed.covariate("renal_dysfunction")
 
     return {
-        "mechanism": mechanism,
+        "mechanism": generated.truth.mechanism,
         "renal": renal,
-        "biomarkers": biomarkers,
-        "atrial_prior": atrial_prior,
+        "biomarkers": generated.observed.biomarkers,
+        "atrial_prior": atrial_prior_given_renal(renal, config),
     }
 
 
@@ -597,15 +591,17 @@ def run_k1_null_experiment(config: ExperimentConfig) -> pd.DataFrame:
     dimension = 3
     parameter_count_k1 = 2 * dimension
     parameter_count_k2 = (2 - 1) + 2 * dimension * 2
+    simulator = TwoMechanismSimulator(config, config.null_renal_effect_sd)
 
     for repeat, repeat_seed in enumerate(repeat_seeds):
         data_seed, fit_seed = repeat_seed.spawn(2)
         data_rng = np.random.default_rng(data_seed)
         fit_rng = np.random.default_rng(fit_seed)
-        renal = data_rng.binomial(1, config.renal_prevalence, size=n)
+        generated = simulator.simulate_null(data_rng, n)
+        renal = generated.observed.covariate("renal_dysfunction")
         renal_contribution = np.zeros((n, dimension), dtype=float)
         renal_contribution[:, 0] = config.null_renal_effect_sd * renal
-        biomarkers = renal_contribution + data_rng.normal(size=(n, dimension))
+        biomarkers = generated.observed.biomarkers
 
         # Correct the observed direct renal path before latent-class selection.
         residualized = biomarkers - renal_contribution
@@ -702,144 +698,6 @@ def summarize_k1_null(null_results: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def plot_primary_figure(
-    summary: pd.DataFrame,
-    config: ExperimentConfig,
-    output_path: Path,
-) -> None:
-    """Export Figure P1 with accuracy and confounded-subgroup false positives."""
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    method_style = {
-        METHOD_POSTERIOR_BLIND: {
-            "color": "#C65A23",
-            "marker": "o",
-            "linestyle": "--",
-            "markerfacecolor": "white",
-        },
-        METHOD_COUNTERFACTUAL: {
-            "color": "#235789",
-            "marker": "s",
-            "linestyle": "-",
-            "markerfacecolor": "#235789",
-        },
-    }
-    metric_panels = (
-        (
-            "true_mechanism_accuracy",
-            "A",
-            "True-mechanism ranking accuracy",
-            "Patients correctly ranked (%)",
-        ),
-        (
-            "false_atrial_confounded_competing",
-            "B",
-            "False atrial classification in the confounded subgroup",
-            "Competing-mechanism patients classified atrial (%)",
-        ),
-    )
-
-    plt.rcParams.update(
-        {
-            "font.family": "DejaVu Sans",
-            "font.size": 10,
-            "axes.titlesize": 11,
-            "axes.labelsize": 10,
-            "xtick.labelsize": 9,
-            "ytick.labelsize": 9,
-        }
-    )
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6), constrained_layout=True)
-    x = np.arange(len(config.confounding_strengths_sd))
-
-    for axis, (metric, panel_letter, title, ylabel) in zip(
-        axes, metric_panels, strict=True
-    ):
-        for method in PRIMARY_METHODS:
-            selected = summary[
-                (summary["metric"] == metric)
-                & (summary["method"] == method)
-            ].sort_values("strength_index")
-            mean = 100.0 * selected["mean"].to_numpy()
-            low = 100.0 * selected["ci_low"].to_numpy()
-            high = 100.0 * selected["ci_high"].to_numpy()
-            style = method_style[method]
-            axis.fill_between(
-                x,
-                low,
-                high,
-                color=style["color"],
-                alpha=0.16,
-                linewidth=0,
-            )
-            axis.errorbar(
-                x,
-                mean,
-                yerr=np.vstack((mean - low, high - mean)),
-                label=method,
-                color=style["color"],
-                marker=style["marker"],
-                linestyle=style["linestyle"],
-                linewidth=2.2,
-                markersize=6.2,
-                markerfacecolor=style["markerfacecolor"],
-                markeredgecolor=style["color"],
-                markeredgewidth=1.4,
-                elinewidth=1.1,
-                capsize=3.0,
-                capthick=1.1,
-            )
-        axis.set_xticks(x, config.confounding_labels)
-        axis.set_xlabel("Direct renal effect on the NT-proBNP-like marker")
-        axis.set_ylabel(ylabel)
-        axis.set_title(f"{panel_letter}. {title}", loc="left", fontweight="semibold")
-        axis.grid(axis="y", color="#D9DEE5", linewidth=0.8)
-        axis.spines[["top", "right"]].set_visible(False)
-        axis.spines[["left", "bottom"]].set_color("#4A5560")
-        axis.tick_params(color="#4A5560")
-
-    accuracy_data = summary[
-        (summary["metric"] == "true_mechanism_accuracy")
-        & (summary["method"].isin(PRIMARY_METHODS))
-    ]
-    accuracy_min = 100.0 * accuracy_data["ci_low"].min()
-    axes[0].set_ylim(max(0.0, np.floor((accuracy_min - 4.0) / 5.0) * 5.0), 86.0)
-    axes[1].set_ylim(0.0, 80.0)
-    axes[0].legend(
-        frameon=False,
-        loc="lower left",
-        bbox_to_anchor=(0.0, 0.01),
-        fontsize=8.8,
-    )
-
-    fig.suptitle(
-        "Figure P1. Mechanism ranking under renal biomarker distortion",
-        x=0.01,
-        ha="left",
-        fontsize=13,
-        fontweight="bold",
-        color="#20262E",
-    )
-    fig.text(
-        0.01,
-        -0.02,
-        (
-            f"Means across {config.repeats_per_level} paired simulated studies "
-            f"({config.patients_per_repeat:,} patients each); shaded bands are "
-            "95% Monte Carlo CIs for the expected rate. The counterfactual "
-            "scorer uses renal status; the matching baseline deliberately "
-            "omits the direct renal biomarker path."
-        ),
-        ha="left",
-        va="top",
-        fontsize=8.5,
-        color="#4A5560",
-    )
-    fig.savefig(output_path, dpi=240, bbox_inches="tight", facecolor="white")
-    fig.savefig(output_path.with_suffix(".pdf"), bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-
-
 def software_versions() -> dict[str, str]:
     """Record numerical-library versions needed to interpret exact reproducibility."""
 
@@ -848,7 +706,7 @@ def software_versions() -> dict[str, str]:
         "numpy": np.__version__,
         "pandas": pd.__version__,
         "scipy": scipy.__version__,
-        "matplotlib": plt.matplotlib.__version__,
+        "matplotlib": version("matplotlib"),
     }
 
 
@@ -856,7 +714,7 @@ def run_full_experiment(
     config: ExperimentConfig,
     output_dir: str | Path = "outputs",
 ) -> dict[str, Any]:
-    """Run, summarize, persist, and plot the full preliminary experiment."""
+    """Run, summarize, and persist the full preliminary experiment."""
 
     started = perf_counter()
     config.validate()
@@ -874,7 +732,6 @@ def run_full_experiment(
     paired.to_csv(output_dir / "paired_method_differences.csv", index=False)
     null_results.to_csv(output_dir / "k1_null_raw_results.csv", index=False)
     null_summary.to_csv(output_dir / "k1_null_summary.csv", index=False)
-    plot_primary_figure(summary, config, output_dir / "figure_P1.png")
 
     metadata = {
         "config": asdict(config),

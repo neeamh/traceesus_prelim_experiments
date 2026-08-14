@@ -7,7 +7,7 @@ python run.py list
 python run.py run endotype_discovery
 python run.py run transportability --repeats 10 --workers 4 --out /tmp/smoke
 python run.py run all
-python run.py figures endotype_discovery
+python run.py figures endotype_discovery  # points to the CSV-only notebook
 python run.py verify --against ./outputs_locked
 """
 
@@ -15,11 +15,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import sys
-from dataclasses import fields, is_dataclass, replace
+from dataclasses import replace
 from pathlib import Path
-from time import perf_counter
 from typing import Any, Callable
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -119,7 +117,7 @@ def _parser() -> argparse.ArgumentParser:
     )
 
     figures_parser = commands.add_parser(
-        "figures", help="Regenerate figures from existing CSV/JSON outputs."
+        "figures", help="Show the path to the CSV-only figure notebook."
     )
     figures_parser.add_argument("experiment", choices=tuple(EXPERIMENTS))
     figures_parser.add_argument("--out", type=Path, help="Existing experiment output directory.")
@@ -157,39 +155,6 @@ def _output_for(name: str, override: Path | None, *, all_run: bool) -> Path:
     if override is None:
         return default_name
     return override / default_name if all_run else override
-
-
-def _restore_config_like(template: Any, serialized: Any) -> Any:
-    """Rehydrate a manifest config without hard-coding experiment schemas.
-
-    Figure-only regeneration must use the configuration that produced the
-    tables, including smoke-run overrides.  The already-constructed default is
-    used only as a type template; tuple order and nested dataclass types are
-    restored recursively before their construction-time validation runs.
-    """
-
-    if is_dataclass(template) and not isinstance(template, type):
-        if not isinstance(serialized, dict):
-            raise ValueError("A serialized dataclass config must be a JSON object.")
-        values = {
-            field.name: _restore_config_like(
-                getattr(template, field.name),
-                serialized[field.name],
-            )
-            for field in fields(template)
-            if field.name in serialized
-        }
-        return type(template)(**values)
-    if isinstance(template, tuple):
-        if not isinstance(serialized, list):
-            raise ValueError("A serialized tuple config field must be a JSON array.")
-        if not template:
-            return tuple(serialized)
-        return tuple(
-            _restore_config_like(template[min(index, len(template) - 1)], value)
-            for index, value in enumerate(serialized)
-        )
-    return serialized
 
 
 def _run_one(
@@ -230,55 +195,13 @@ def _run(arguments: argparse.Namespace) -> int:
 
 
 def _figures(arguments: argparse.Namespace) -> int:
-    from traceesus.core.io import write_json, write_manifest
+    """Point presentation requests to the committed CSV-only notebook."""
 
-    name = arguments.experiment
-    output = _output_for(name, arguments.out, all_run=False)
-    factory = FACTORIES.get(name)
-    if factory is None:
-        raise RuntimeError(f"Experiment {name!r} has not yet been registered.")
-    experiment = factory(repeats=None, workers=None, output=output)
-    existing_manifest: dict[str, Any] | None = None
-    manifest_path = output / "manifest.json"
-    if manifest_path.is_file():
-        loaded = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if not isinstance(loaded, dict) or not isinstance(loaded.get("config"), dict):
-            raise ValueError(f"{manifest_path}: manifest config is invalid.")
-        existing_manifest = loaded
-        restored_config = _restore_config_like(experiment.config, loaded["config"])
-        experiment = type(experiment)(restored_config, output)
-    experiment.configure()
-    started = perf_counter()
-    experiment.figures_only()
-    figure_runtime = perf_counter() - started
-    config = experiment.config
-    if hasattr(config, "master_seed"):
-        master_seed = int(config.master_seed)
-    elif hasattr(config, "seed"):
-        master_seed = int(config.seed)
-    else:
-        raise RuntimeError(f"{name}: config exposes no reproducibility seed.")
-    recorded_runtime = figure_runtime
-    if existing_manifest is not None:
-        previous_runtime = existing_manifest.get("wall_clock_runtime_seconds")
-        if (
-            not isinstance(previous_runtime, bool)
-            and isinstance(previous_runtime, (int, float))
-            and math.isfinite(previous_runtime)
-            and previous_runtime >= 0.0
-        ):
-            recorded_runtime = float(previous_runtime)
-    manifest = write_manifest(
-        output,
-        experiment=name,
-        config=config,
-        master_seed=master_seed,
-        wall_clock_runtime_seconds=recorded_runtime,
+    notebook = PROJECT_ROOT / "notebooks" / "figures.ipynb"
+    print(
+        f"{arguments.experiment}: package figure generation was removed; "
+        f"run {notebook}."
     )
-    manifest["last_operation"] = "figures_only"
-    manifest["last_operation_runtime_seconds"] = figure_runtime
-    write_json(manifest_path, manifest)
-    print(f"{name}: figures regenerated in {output.resolve()}")
     return 0
 
 

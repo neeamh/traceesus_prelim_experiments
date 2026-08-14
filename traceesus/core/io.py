@@ -7,10 +7,10 @@ import json
 import platform
 import subprocess
 from dataclasses import asdict, is_dataclass
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
-import matplotlib
 import numpy as np
 import pandas as pd
 import scipy
@@ -27,6 +27,26 @@ def write_json(path: Path, value: Any) -> None:
     """Write legacy JSON formatting exactly: UTF-8 and two-space indentation."""
 
     path.write_text(json.dumps(value, indent=2), encoding="utf-8")
+
+
+def write_standard_tables(
+    output_directory: Path,
+    experiment_name: str,
+    raw_long: pd.DataFrame,
+    summary: pd.DataFrame,
+    contrasts: pd.DataFrame,
+) -> None:
+    """Write the additive tidy output contract without replacing legacy tables."""
+
+    raw_long.to_csv(
+        output_directory / f"{experiment_name}_raw_long.csv", index=False
+    )
+    summary.to_csv(
+        output_directory / f"{experiment_name}_summary.csv", index=False
+    )
+    contrasts.to_csv(
+        output_directory / f"{experiment_name}_contrasts.csv", index=False
+    )
 
 
 def sha256_file(path: Path) -> str:
@@ -99,7 +119,7 @@ def write_manifest(
             "numpy": np.__version__,
             "pandas": pd.__version__,
             "scipy": scipy.__version__,
-            "matplotlib": matplotlib.__version__,
+            "matplotlib": version("matplotlib"),
         },
         "wall_clock_runtime_seconds": float(wall_clock_runtime_seconds),
         "output_file_sha256": checksums,

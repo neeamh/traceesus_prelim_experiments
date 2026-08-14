@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError, replace
+from pathlib import Path
 from typing import Any, get_type_hints
 
 import numpy as np
@@ -30,8 +31,7 @@ from traceesus.models.modular_causal_scm import (
     TransportModelConfig,
     _fitting_config,
 )
-from traceesus.plotting import panels
-from traceesus.plotting.theme import DEFAULT_FONT, FIGURE_SIZES_INCHES, PALETTE
+from traceesus.plotting.style import DEFAULT_FONT, FIGURE_SIZES_INCHES, PALETTE
 from traceesus.queries.posterior import anchor_order
 
 
@@ -92,22 +92,32 @@ def test_transport_adapter_exposes_a_precise_config_union() -> None:
         _fitting_config(object())  # type: ignore[arg-type]
 
 
-def test_plotting_surface_names_every_retained_figure_family() -> None:
-    """Expose retained plotting adapters while preserving exact kernel functions."""
+def test_plotting_package_contains_style_only() -> None:
+    """Keep every rendering implementation outside the importable package."""
 
-    assert panels.plot_counterfactual_primary is counterfactual_kernel.plot_primary_figure
-    assert panels.plot_endotype_recovery is endotype_kernel.plot_primary_figure
-    assert panels.plot_endotype_controls is endotype_kernel.plot_control_figure
-    assert panels.plot_endotype_example_patient is endotype_kernel.plot_example_patient
-    assert panels.plot_transportability_primary is transport_kernel.plot_transport_figure
-    assert panels.plot_transportability_controls is transport_kernel.plot_transport_controls
-    assert panels.plot_transportability_ablation is transport_kernel.plot_ablation_figure
-
+    plotting = Path(__file__).resolve().parents[1] / "traceesus" / "plotting"
+    assert {path.name for path in plotting.glob("*.py")} == {"__init__.py", "style.py"}
+    assert not hasattr(counterfactual_kernel, "plot_primary_figure")
+    assert not hasattr(endotype_kernel, "plot_primary_figure")
+    assert not hasattr(transport_kernel, "plot_transport_figure")
     assert DEFAULT_FONT == "DejaVu Sans"
     assert PALETTE["associative"] == "#D97706"
     assert PALETTE["causal"] == "#1D4ED8"
     assert FIGURE_SIZES_INCHES["endotype_recovery"] == (12.2, 5.1)
     assert FIGURE_SIZES_INCHES["transportability_primary"] == (12.4, 5.2)
+
+
+def test_only_style_module_imports_matplotlib() -> None:
+    """Enforce the computation/presentation import boundary mechanically."""
+
+    package = Path(__file__).resolve().parents[1] / "traceesus"
+    importers = {
+        path.relative_to(package).as_posix()
+        for path in package.rglob("*.py")
+        if "import matplotlib" in path.read_text(encoding="utf-8")
+        or "from matplotlib" in path.read_text(encoding="utf-8")
+    }
+    assert importers == {"plotting/style.py"}
 
 
 def test_two_mechanism_kernels_retain_distinct_dtype_contracts() -> None:

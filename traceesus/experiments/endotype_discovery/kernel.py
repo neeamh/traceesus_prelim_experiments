@@ -34,7 +34,6 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Iterable, Sequence
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy
@@ -54,6 +53,7 @@ from traceesus.core.stats import (
     paired_mean_contrast,
     wilson_interval as _shared_wilson_interval,
 )
+from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 from configs.endotype_discovery import ExperimentConfig, FittingConfig, SimulationConfig
 
 
@@ -174,57 +174,18 @@ def simulate_two_mechanism_cohort(
     *,
     heart_failure_effect_sd: float = 0.0,
 ) -> SimulatedCohort:
-    """Generate patients from the prespecified two-mechanism structural model.
+    """Adapt the shared simulator to the kernel's historical cohort container."""
 
-    ``heart_failure_effect_sd`` is keyword-only with a zero default so every
-    proposal-cited call site keeps its historical signature.  Heart failure is
-    drawn *after* the biomarker noise: renal status, mechanism, and noise then
-    consume exactly the bits they always consumed, and a zero effect reproduces
-    the locked outputs while still emitting the HF covariate for subgrouping.
-    """
-
-    renal = rng.binomial(
-        1,
-        config.renal_dysfunction_prevalence,
-        size=patient_count,
-    ).astype(np.int8)
-    atrial_probability = np.where(
-        renal == 1,
-        config.atrial_probability_if_renal_impaired,
-        config.atrial_probability_if_renal_normal,
-    )
-    is_atrial = rng.random(patient_count) < atrial_probability
-    mechanism = np.where(
-        is_atrial,
-        Mechanism.ATRIAL,
-        Mechanism.COMPETING,
-    ).astype(np.int8)
-
-    atrial_effect = _as_float_array(config.atrial_path_effects_sd)
-    competing_effect = _as_float_array(config.competing_path_effects_sd)
-    class_effects = np.stack((atrial_effect, competing_effect), axis=0)
-    renal_effect = np.zeros(len(BIOMARKER_NAMES), dtype=float)
-    renal_effect[Biomarker.NT_PROBNP_LIKE] = renal_effect_sd
-    noise_sd = _as_float_array(config.biomarker_noise_sd)
-
-    heart_failure_effect = np.zeros(len(BIOMARKER_NAMES), dtype=float)
-    heart_failure_effect[Biomarker.PTFV1] = heart_failure_effect_sd
-
-    biomarkers = (
-        class_effects[mechanism]
-        + renal[:, None] * renal_effect
-        + rng.normal(0.0, noise_sd, size=(patient_count, len(BIOMARKER_NAMES)))
-    )
-    heart_failure = rng.binomial(
-        1, config.heart_failure_prevalence, size=patient_count
-    ).astype(np.int8)
-    biomarkers = biomarkers + heart_failure[:, None] * heart_failure_effect
-
+    generated = TwoMechanismSimulator(
+        config,
+        renal_effect_sd,
+        heart_failure_effect_sd,
+    ).simulate(rng, patient_count)
     return SimulatedCohort(
-        biomarkers=biomarkers,
-        renal_dysfunction=renal,
-        true_mechanism=mechanism,
-        heart_failure=heart_failure,
+        biomarkers=generated.observed.biomarkers,
+        renal_dysfunction=generated.observed.covariate("renal_dysfunction"),
+        true_mechanism=generated.truth.mechanism,
+        heart_failure=generated.observed.covariate("heart_failure"),
     )
 
 
@@ -234,27 +195,16 @@ def simulate_one_mechanism_null_cohort(
     renal_effect_sd: float,
     config: SimulationConfig,
 ) -> SimulatedCohort:
-    """Generate a homogeneous K=1 cohort with a real renal biomarker pathway."""
+    """Adapt the shared null method without consuming a heart-failure draw."""
 
-    renal = rng.binomial(
-        1,
-        config.renal_dysfunction_prevalence,
-        size=patient_count,
-    ).astype(np.int8)
-    renal_effect = np.zeros(len(BIOMARKER_NAMES), dtype=float)
-    renal_effect[Biomarker.NT_PROBNP_LIKE] = renal_effect_sd
-    noise_sd = _as_float_array(config.biomarker_noise_sd)
-    biomarkers = (
-        renal[:, None] * renal_effect
-        + rng.normal(0.0, noise_sd, size=(patient_count, len(BIOMARKER_NAMES)))
+    generated = TwoMechanismSimulator(config, renal_effect_sd).simulate_null(
+        rng, patient_count
     )
     return SimulatedCohort(
-        biomarkers=biomarkers,
-        renal_dysfunction=renal,
-        true_mechanism=np.zeros(patient_count, dtype=np.int8),
-        # Zeros by construction, not drawn: the locked K=1 null must not
-        # consume any additional RNG values.
-        heart_failure=np.zeros(patient_count, dtype=np.int8),
+        biomarkers=generated.observed.biomarkers,
+        renal_dysfunction=generated.observed.covariate("renal_dysfunction"),
+        true_mechanism=generated.truth.mechanism,
+        heart_failure=generated.observed.covariate("heart_failure"),
     )
 
 
@@ -1306,271 +1256,6 @@ def summarize_k1_null(raw_null: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _metric_summary_lookup(
-    summary: pd.DataFrame,
-    renal_effect_sd: float,
-    method: str,
-    metric: str,
-) -> pd.Series:
-    matches = summary[
-        (summary["renal_effect_sd"] == renal_effect_sd)
-        & (summary["method"] == method)
-        & (summary["metric"] == metric)
-    ]
-    if matches.shape[0] != 1:
-        raise RuntimeError("Expected exactly one metric-summary row.")
-    return matches.iloc[0]
-
-
-def plot_primary_figure(
-    summary: pd.DataFrame,
-    config: ExperimentConfig,
-    output_directory: Path,
-) -> None:
-    """Figure P1: primary two-line comparison and confounded-subgroup error."""
-
-    strengths = np.asarray(config.simulation.renal_effect_levels_sd, dtype=float)
-    labels = config.simulation.renal_effect_labels
-    colors = {
-        ASSOCIATIVE_LCA: "#D97706",
-        CAUSAL_SCM: "#1D4ED8",
-    }
-    line_styles = {
-        ASSOCIATIVE_LCA: (0, (5, 3)),
-        CAUSAL_SCM: "solid",
-    }
-
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.1), sharex=True)
-    panels = (
-        (
-            axes[0],
-            "accuracy",
-            "True-mechanism ranking accuracy",
-            "Patients correctly assigned (%)",
-        ),
-        (
-            axes[1],
-            "false_atrial_renal_competing",
-            "False atrial classification in renal-distorted subgroup",
-            "Renal/competing patients called atrial (%)",
-        ),
-    )
-    for axis, metric, title, ylabel in panels:
-        for method in PRIMARY_METHODS:
-            method_summary = summary[
-                (summary["method"] == method)
-                & (summary["metric"] == metric)
-            ].sort_values("renal_effect_sd")
-            mean = 100.0 * method_summary["mean"].to_numpy()
-            ci_low = np.clip(
-                100.0 * method_summary["ci95_low"].to_numpy(),
-                0.0,
-                100.0,
-            )
-            ci_high = np.clip(
-                100.0 * method_summary["ci95_high"].to_numpy(),
-                0.0,
-                100.0,
-            )
-            axis.plot(
-                strengths,
-                mean,
-                color=colors[method],
-                linestyle=line_styles[method],
-                marker="o" if method == CAUSAL_SCM else "s",
-                markerfacecolor="white" if method == ASSOCIATIVE_LCA else colors[method],
-                markeredgecolor=colors[method],
-                linewidth=2.2,
-                markersize=6.5,
-                label=method,
-                zorder=3,
-            )
-            axis.fill_between(
-                strengths,
-                ci_low,
-                ci_high,
-                color=colors[method],
-                alpha=0.14,
-                linewidth=0,
-                zorder=2,
-            )
-        axis.set_title(title, loc="left", fontsize=11.5, fontweight="semibold")
-        axis.set_ylabel(ylabel)
-        axis.set_xticks(strengths, labels)
-        axis.set_xlabel("Direct renal effect on NT-proBNP-like marker")
-        axis.grid(axis="y", color="#D1D5DB", linewidth=0.8, alpha=0.7)
-        axis.spines["top"].set_visible(False)
-        axis.spines["right"].set_visible(False)
-        axis.set_ylim(0.0, 100.0)
-
-    fig.suptitle(
-        "Figure P1. Hidden-mechanism recovery under renal biomarker distortion",
-        x=0.07,
-        y=1.03,
-        ha="left",
-        fontsize=15,
-        fontweight="bold",
-        color="#111827",
-    )
-    fig.text(
-        0.07,
-        0.965,
-        (
-            f"Unlabeled training n={config.simulation.training_patients:,}; "
-            f"independent test n={config.simulation.test_patients:,}; "
-            f"{config.repeats_per_level} paired repeats/level; bands are 95% Monte Carlo CIs"
-        ),
-        ha="left",
-        fontsize=9.5,
-        color="#4B5563",
-    )
-    handles, legend_labels = axes[0].get_legend_handles_labels()
-    fig.legend(
-        handles,
-        legend_labels,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.035),
-        ncol=2,
-        frameon=False,
-        fontsize=9.5,
-    )
-    fig.tight_layout(rect=(0.04, 0.08, 0.99, 0.93))
-    for suffix in ("png", "pdf"):
-        fig.savefig(
-            output_directory / f"figure_P1_latent_recovery.{suffix}",
-            dpi=300,
-            bbox_inches="tight",
-        )
-    plt.close(fig)
-
-
-def plot_control_figure(
-    summary: pd.DataFrame,
-    null_summary: pd.DataFrame,
-    config: ExperimentConfig,
-    output_directory: Path,
-) -> None:
-    """Supplementary controls: adjusted LCA/oracle and K=1 null behavior."""
-
-    strengths = np.asarray(config.simulation.renal_effect_levels_sd, dtype=float)
-    styles = {
-        ASSOCIATIVE_ADJUSTED: ("#6B7280", (0, (5, 3)), "D", "white"),
-        CAUSAL_SCM: ("#1D4ED8", "solid", "o", "#1D4ED8"),
-        ORACLE: ("#111827", (0, (1.5, 2.5)), "^", "white"),
-    }
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.0))
-
-    for method in (ASSOCIATIVE_ADJUSTED, CAUSAL_SCM, ORACLE):
-        method_summary = summary[
-            (summary["method"] == method)
-            & (summary["metric"] == "accuracy")
-        ].sort_values("renal_effect_sd")
-        color, linestyle, marker, facecolor = styles[method]
-        axes[0].plot(
-            strengths,
-            100.0 * method_summary["mean"].to_numpy(),
-            color=color,
-            linestyle=linestyle,
-            marker=marker,
-            markerfacecolor=facecolor,
-            markeredgecolor=color,
-            linewidth=2.0,
-            label=method,
-        )
-    axes[0].set_title(
-        "Recovery with renal adjustment and oracle reference",
-        loc="left",
-        fontsize=11.5,
-        fontweight="semibold",
-    )
-    axes[0].set_ylabel("Patients correctly assigned (%)")
-    axes[0].set_xlabel("Direct renal effect on NT-proBNP-like marker")
-    axes[0].set_xticks(strengths, config.simulation.renal_effect_labels)
-    axes[0].set_ylim(bottom=0.0)
-    axes[0].grid(axis="y", color="#D1D5DB", linewidth=0.8, alpha=0.7)
-    axes[0].legend(frameon=False, fontsize=8.5, loc="lower left")
-
-    bar_methods = (ASSOCIATIVE_LCA, ASSOCIATIVE_ADJUSTED, CAUSAL_SCM)
-    bar_colors = ("#D97706", "#9CA3AF", "#1D4ED8")
-    null_indexed = null_summary.set_index("method")
-    rates = [100.0 * null_indexed.loc[method, "false_k2_rate"] for method in bar_methods]
-    lower = [
-        max(
-            0.0,
-            100.0
-            * (
-                null_indexed.loc[method, "false_k2_rate"]
-                - null_indexed.loc[method, "wilson_ci95_low"]
-            ),
-        )
-        for method in bar_methods
-    ]
-    upper = [
-        max(
-            0.0,
-            100.0
-            * (
-                null_indexed.loc[method, "wilson_ci95_high"]
-                - null_indexed.loc[method, "false_k2_rate"]
-            ),
-        )
-        for method in bar_methods
-    ]
-    short_labels = ("Associative\nLCA", "Adjusted\nLCA", "Causal\nSCM")
-    bars = axes[1].bar(
-        np.arange(len(bar_methods)),
-        rates,
-        color=bar_colors,
-        edgecolor="#374151",
-        linewidth=0.8,
-        yerr=np.asarray((lower, upper)),
-        capsize=4,
-    )
-    axes[1].bar_label(bars, labels=[f"{value:.1f}%" for value in rates], padding=3)
-    axes[1].set_xticks(np.arange(len(bar_methods)), short_labels)
-    axes[1].set_ylim(0.0, max(100.0, max(rates) * 1.15))
-    axes[1].set_ylabel("Null repeats selecting K=2 (%)")
-    axes[1].set_title(
-        f"K=1 null at {config.null_renal_effect_sd:.2f}-SD renal distortion",
-        loc="left",
-        fontsize=11.5,
-        fontweight="semibold",
-    )
-    axes[1].grid(axis="y", color="#D1D5DB", linewidth=0.8, alpha=0.7)
-
-    for axis in axes:
-        axis.spines["top"].set_visible(False)
-        axis.spines["right"].set_visible(False)
-    fig.suptitle(
-        "Figure S1. Fairness and null-model controls",
-        x=0.07,
-        y=1.02,
-        ha="left",
-        fontsize=15,
-        fontweight="bold",
-        color="#111827",
-    )
-    fig.text(
-        0.07,
-        0.95,
-        (
-            "Adjusted LCA estimates renal associations for every marker; "
-            f"null bars use {config.null_repeats} repeats and BIC selection"
-        ),
-        ha="left",
-        fontsize=9.5,
-        color="#4B5563",
-    )
-    fig.tight_layout(rect=(0.04, 0.04, 0.99, 0.91))
-    for suffix in ("png", "pdf"):
-        fig.savefig(
-            output_directory / f"figure_S1_controls.{suffix}",
-            dpi=300,
-            bbox_inches="tight",
-        )
-    plt.close(fig)
-
-
 def build_example_patient(
     config: ExperimentConfig,
 ) -> dict[str, object]:
@@ -1682,76 +1367,6 @@ def build_example_patient(
             causal[patient_index, Mechanism.ATRIAL]
         ),
     }
-
-
-def plot_example_patient(
-    example: dict[str, object],
-    output_directory: Path,
-) -> None:
-    """Visualize the preselected illustrative case without refitting any model.
-
-    The example is truth/outcome selected for explanation, not an unbiased
-    performance estimate; aggregate recovery tables carry the estimand.
-    """
-
-    names = ("NT-proBNP-like", "Atrial electrical", "Competing-specific")
-    observed = np.asarray(list(example["observed_biomarkers"].values()))
-    neutralized = np.asarray(
-        list(example["causal_renal_neutralized_biomarkers"].values())
-    )
-    positions = np.arange(len(names))
-    width = 0.34
-    fig, axis = plt.subplots(figsize=(8.8, 5.1))
-    axis.bar(
-        positions - width / 2,
-        observed,
-        width,
-        label="Observed",
-        color="#D97706",
-        edgecolor="#92400E",
-    )
-    axis.bar(
-        positions + width / 2,
-        neutralized,
-        width,
-        label="After removing estimated renal contribution",
-        color="#DBEAFE",
-        edgecolor="#1D4ED8",
-    )
-    axis.axhline(0.0, color="#374151", linewidth=0.9)
-    axis.set_xticks(positions, names)
-    axis.set_ylabel("Standardized biomarker value")
-    fig.suptitle(
-        "Figure P2. One renal-impaired patient with a true competing mechanism",
-        x=0.08,
-        y=0.98,
-        ha="left",
-        fontsize=13,
-        fontweight="bold",
-    )
-    fig.text(
-        0.08,
-        0.92,
-        (
-            f"Associative P(atrial)={example['associative_atrial_probability']:.2f}; "
-            f"causal P(atrial)={example['causal_atrial_probability']:.2f}; "
-            f"renal path={example['renal_effect_sd']:.2f} SD"
-        ),
-        fontsize=9.5,
-        color="#4B5563",
-    )
-    axis.legend(frameon=False, loc="upper right", fontsize=8.5)
-    axis.grid(axis="y", color="#D1D5DB", linewidth=0.8, alpha=0.7)
-    axis.spines["top"].set_visible(False)
-    axis.spines["right"].set_visible(False)
-    fig.tight_layout(rect=(0.02, 0.02, 0.99, 0.87))
-    for suffix in ("png", "pdf"):
-        fig.savefig(
-            output_directory / f"figure_P2_example_patient.{suffix}",
-            dpi=300,
-            bbox_inches="tight",
-        )
-    plt.close(fig)
 
 
 def validation_checks(
@@ -1886,9 +1501,6 @@ def run_full_experiment(
         encoding="utf-8",
     )
 
-    plot_primary_figure(summary, config, output_directory)
-    plot_control_figure(summary, null_summary, config, output_directory)
-    plot_example_patient(example, output_directory)
     manifest = write_manifest(
         output_directory,
         experiment="endotype_discovery",
@@ -1967,7 +1579,7 @@ def parse_arguments() -> argparse.Namespace:
         "--output-dir",
         type=Path,
         default=Path("outputs_latent_endotyping"),
-        help="Directory for tables, metadata, and figures.",
+        help="Directory for tables and metadata.",
     )
     parser.add_argument(
         "--repeats",

@@ -9,7 +9,8 @@ from typing import Any
 import pandas as pd
 
 from traceesus.core.experiment import Experiment
-from traceesus.core.io import write_json, write_manifest
+from traceesus.core.data_dictionary import write_data_dictionary
+from traceesus.core.io import write_json, write_manifest, write_standard_tables
 from traceesus.models.known_scm import (
     KnownKidneyBlindPosteriorModel,
     KnownStructuralCausalModel,
@@ -29,6 +30,43 @@ class CounterfactualArtifacts:
     null_summary: pd.DataFrame | None = None
     metadata: dict[str, object] | None = None
     manifest: dict[str, object] | None = None
+
+
+def _standard_tables(
+    artifacts: CounterfactualArtifacts,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Rename the already-tidy known-SCM outputs to the common contract."""
+
+    raw_long = artifacts.raw_metrics[
+        [
+            "strength_index", "renal_effect_sd", "repeat", "method", "metric",
+            "value", "denominator",
+        ]
+    ].copy()
+    summary = artifacts.summary.rename(
+        columns={
+            "n_repeats": "repeat_count",
+            "monte_carlo_se": "monte_carlo_standard_error",
+            "ci_low": "ci95_low",
+            "ci_high": "ci95_high",
+        }
+    )
+    summary_columns = [
+        "strength_index", "renal_effect_sd", "method", "metric", "mean",
+        "ci95_low", "ci95_high", "monte_carlo_standard_error", "repeat_count",
+    ]
+    contrasts = artifacts.paired_differences.rename(
+        columns={
+            "n_repeats": "repeat_count",
+            "ci_low": "ci95_low",
+            "ci_high": "ci95_high",
+        }
+    )
+    contrast_columns = [
+        "strength_index", "renal_effect_sd", "metric", "contrast",
+        "mean_difference", "ci95_low", "ci95_high", "repeat_count",
+    ]
+    return raw_long, summary[summary_columns], contrasts[contrast_columns]
 
 
 class CounterfactualExperiment(Experiment):
@@ -115,15 +153,7 @@ class CounterfactualExperiment(Experiment):
         return artifacts
 
     def plot(self) -> None:
-        """Regenerate the historical Figure P1 PNG and PDF from the summary."""
-
-        if self.artifacts is None or self.artifacts.summary is None:
-            raise RuntimeError("summarize() must precede plot().")
-        kernel.plot_primary_figure(
-            self.artifacts.summary,
-            self.config,
-            self.output_directory / "figure_P1.png",
-        )
+        """Do nothing; figures are rendered by ``notebooks/figures.ipynb``."""
 
     def write(self) -> dict[str, Any]:
         """Write five exact CSVs, exact metadata, and an additive manifest."""
@@ -146,7 +176,13 @@ class CounterfactualExperiment(Experiment):
         artifacts.null_summary.to_csv(
             self.output_directory / "k1_null_summary.csv", index=False
         )
+        raw_long, summary, contrasts = _standard_tables(artifacts)
+        write_standard_tables(
+            self.output_directory, self.name, raw_long, summary, contrasts
+        )
         write_json(self.output_directory / "run_metadata.json", artifacts.metadata)
+        write_json(self.output_directory / "metadata.json", artifacts.metadata)
+        write_data_dictionary(self.output_directory / "data_dictionary.csv")
         artifacts.manifest = write_manifest(
             self.output_directory,
             experiment=self.name,
@@ -160,23 +196,9 @@ class CounterfactualExperiment(Experiment):
             "paired_differences": artifacts.paired_differences,
             "null_results": artifacts.null_results,
             "null_summary": artifacts.null_summary,
-            "figure_png": self.output_directory / "figure_P1.png",
-            "figure_pdf": self.output_directory / "figure_P1.pdf",
             "metadata": artifacts.metadata,
             "manifest": artifacts.manifest,
         }
-
-    def figures_only(self) -> None:
-        """Regenerate figures from the existing compatibility summary table."""
-
-        summary = pd.read_csv(
-            self.output_directory / "main_simulation_summary.csv"
-        )
-        kernel.plot_primary_figure(
-            summary,
-            self.config,
-            self.output_directory / "figure_P1.png",
-        )
 
     def console_summary(self) -> str:
         """Render the historical compact diagnostics after summarization."""

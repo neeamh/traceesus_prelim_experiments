@@ -17,10 +17,10 @@ import subprocess
 import struct
 import sys
 from dataclasses import dataclass, field
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Collection, Mapping, Sequence
 
-import matplotlib
 import numpy as np
 import pandas as pd
 import scipy
@@ -660,7 +660,7 @@ def _live_package_versions() -> dict[str, str]:
         "numpy": np.__version__,
         "pandas": pd.__version__,
         "scipy": scipy.__version__,
-        "matplotlib": matplotlib.__version__,
+        "matplotlib": version("matplotlib"),
     }
 
 

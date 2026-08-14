@@ -1,0 +1,41 @@
+renal_effect_sd,metric,contrast,mean_difference,ci95_low,ci95_high,repeat_count
+0.0,accuracy,causal SCM minus comparator: Associative latent class model,-0.0005499999999999,-0.0009002653805668,-0.0001997346194331,500
+0.0,adjusted_rand_index,causal SCM minus comparator: Associative latent class model,-0.0014409911508346,-0.0023393109595476,-0.0005426713421216,500
+0.0,false_atrial_renal_competing,causal SCM minus comparator: Associative latent class model,0.0003988035064427,-0.0021714862020387,0.0029690932149241,500
+0.0,brier_score,causal SCM minus comparator: Associative latent class model,0.0004547558545026,0.0003246029859702,0.0005849087230351,500
+0.0,expected_calibration_error,causal SCM minus comparator: Associative latent class model,0.0004990862095517,-6.420218490664129e-05,0.0010623746040101,500
+0.0,accuracy,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0035699999999999,0.0027416814518175,0.0043983185481824,500
+0.0,adjusted_rand_index,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0088525173685172,0.0068192470936924,0.010885787643342,500
+0.0,false_atrial_renal_competing,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0093416090899721,-0.0166054932680312,-0.0020777249119131,500
+0.0,brier_score,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0024315038366669,-0.0029735623585081,-0.0018894453148258,500
+0.0,expected_calibration_error,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0015272557883135,-0.0025158975152665,-0.0005386140613606,500
+0.5,accuracy,causal SCM minus comparator: Associative latent class model,0.0128479999999999,0.0117109262458129,0.0139850737541869,500
+0.5,adjusted_rand_index,causal SCM minus comparator: Associative latent class model,0.0319478023390445,0.0291702423291639,0.0347253623489251,500
+0.5,false_atrial_renal_competing,causal SCM minus comparator: Associative latent class model,-0.1596070730062397,-0.1659590771996719,-0.1532550688128075,500
+0.5,brier_score,causal SCM minus comparator: Associative latent class model,-0.008975485577004,-0.0096328228043443,-0.0083181483496636,500
+0.5,expected_calibration_error,causal SCM minus comparator: Associative latent class model,-0.0061022249721958,-0.0077586206246162,-0.0044458293197754,500
+0.5,accuracy,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0028439999999999,0.0020665018677526,0.0036214981322473,500
+0.5,adjusted_rand_index,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0071167496379662,0.005188032317896,0.0090454669580364,500
+0.5,false_atrial_renal_competing,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0027683039312118,-0.0093146754823729,0.0037780676199492,500
+0.5,brier_score,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0019638775609445,-0.002398671075182,-0.001529084046707,500
+0.5,expected_calibration_error,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0006717529063619,-0.0016540821036706,0.0003105762909467,500
+1.0,accuracy,causal SCM minus comparator: Associative latent class model,0.0866579999999999,0.0841564030145304,0.0891595969854695,500
+1.0,adjusted_rand_index,causal SCM minus comparator: Associative latent class model,0.1897782908472724,0.1849417097228231,0.1946148719717217,500
+1.0,false_atrial_renal_competing,causal SCM minus comparator: Associative latent class model,-0.4550758144382542,-0.466198331552508,-0.4439532973240003,500
+1.0,brier_score,causal SCM minus comparator: Associative latent class model,-0.0634241892327812,-0.0651498316637877,-0.0616985468017746,500
+1.0,expected_calibration_error,causal SCM minus comparator: Associative latent class model,-0.0774672152748024,-0.0807270693785758,-0.0742073611710291,500
+1.0,accuracy,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0037059999999999,0.0029216869084074,0.0044903130915925,500
+1.0,adjusted_rand_index,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0093202785104712,0.0073609470944844,0.0112796099264581,500
+1.0,false_atrial_renal_competing,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0058835152163742,-0.0130608130853765,0.001293782652628,500
+1.0,brier_score,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0023645174185897,-0.0028098237411791,-0.0019192110960004,500
+1.0,expected_calibration_error,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.000854526246111,-0.0018040337749608,9.498128273867834e-05,500
+1.5,accuracy,causal SCM minus comparator: Associative latent class model,0.240828,0.2354624478227607,0.2461935521772392,500
+1.5,adjusted_rand_index,causal SCM minus comparator: Associative latent class model,0.3705512269752534,0.3658606612616863,0.3752417926888205,500
+1.5,false_atrial_renal_competing,causal SCM minus comparator: Associative latent class model,-0.5747903674948778,-0.6019199156850659,-0.5476608193046897,500
+1.5,brier_score,causal SCM minus comparator: Associative latent class model,-0.2213575837569467,-0.2285573143696131,-0.2141578531442803,500
+1.5,expected_calibration_error,causal SCM minus comparator: Associative latent class model,-0.2980908561118203,-0.3062196280614789,-0.2899620841621617,500
+1.5,accuracy,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0029639999999999,0.0021939246790881,0.0037340753209118,500
+1.5,adjusted_rand_index,causal SCM minus comparator: Renal-adjusted associative latent class model,0.0074238748201762,0.0055158464818171,0.0093319031585354,500
+1.5,false_atrial_renal_competing,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0123354061393027,-0.0193694709934996,-0.0053013412851058,500
+1.5,brier_score,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0022281443125219,-0.0026540350211099,-0.0018022536039338,500
+1.5,expected_calibration_error,causal SCM minus comparator: Renal-adjusted associative latent class model,-0.0017037600450003,-0.0026006741393605,-0.00080684595064,500

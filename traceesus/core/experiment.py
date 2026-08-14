@@ -56,7 +56,7 @@ class Experiment(ABC):
 
     @abstractmethod
     def plot(self) -> Any:
-        """Create figures from completed summaries without rerunning models."""
+        """Do nothing; presentation lives in ``notebooks/figures.ipynb``."""
 
     @abstractmethod
     def write(self) -> Any:
