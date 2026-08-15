@@ -18,32 +18,20 @@ import json
 import sys
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Callable
+from types import MappingProxyType
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from traceesus.core.verification import compare_output_trees
+from traceesus.registry import ACTIVE_EXPERIMENT_DESIGNS
 
 
-EXPERIMENTS = {
-    "endotype_discovery": {
-        "config": "configs/endotype_discovery.py",
-        "output": "outputs_latent_endotyping",
-        "description": "Unsupervised latent endotype recovery plus the K=1 null control.",
-    },
-    "transportability": {
-        "config": "configs/transportability.py",
-        "output": "outputs_transportability",
-        "description": "Unlabeled cross-hospital transport, shifts, and ablations.",
-    },
-    "counterfactual": {
-        "config": "configs/counterfactual.py",
-        "output": "outputs",
-        "description": "Known-SCM kidney-blind, posterior, and counterfactual query comparison.",
-    },
-}
+EXPERIMENTS = MappingProxyType(
+    {design.name: design for design in ACTIVE_EXPERIMENT_DESIGNS}
+)
 
 
 def _endotype_factory(
@@ -74,31 +62,12 @@ def _transportability_factory(
     return TransportabilityExperiment(config, output)
 
 
-def _counterfactual_factory(
-    *, repeats: int | None, workers: int | None, output: Path
-) -> Any:
-    from configs.counterfactual import CONFIG
-    from traceesus.experiments.counterfactual import CounterfactualExperiment
-
-    if workers not in (None, 1):
-        raise ValueError(
-            "counterfactual has no legacy parallel-worker setting; use --workers 1."
-        )
-    config = CONFIG
-    if repeats is not None:
-        config = replace(
-            config,
-            repeats_per_level=repeats,
-            null_repeats=repeats,
-        )
-    return CounterfactualExperiment(config, output)
-
-
-FACTORIES: dict[str, Callable[..., Any]] = {
-    "endotype_discovery": _endotype_factory,
-    "transportability": _transportability_factory,
-    "counterfactual": _counterfactual_factory,
-}
+FACTORIES = MappingProxyType(
+    {
+        "endotype_discovery": _endotype_factory,
+        "transportability": _transportability_factory,
+    }
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -142,16 +111,17 @@ def _parser() -> argparse.ArgumentParser:
 
 def _list_experiments() -> int:
     print("TRACE-ESUS experiments\n")
-    for name, details in EXPERIMENTS.items():
+    for name, design in EXPERIMENTS.items():
         print(f"{name}")
-        print(f"  tests:  {details['description']}")
-        print(f"  config: {details['config']}")
-        print(f"  output: {details['output']}")
+        config_path = design.config.__class__.__module__.replace(".", "/") + ".py"
+        print(f"  tests:  {design.description}")
+        print(f"  config: {config_path}")
+        print(f"  output: {design.output_directory}")
     return 0
 
 
 def _output_for(name: str, override: Path | None, *, all_run: bool) -> Path:
-    default_name = Path(str(EXPERIMENTS[name]["output"]))
+    default_name = Path(EXPERIMENTS[name].output_directory)
     if override is None:
         return default_name
     return override / default_name if all_run else override
@@ -208,8 +178,8 @@ def _figures(arguments: argparse.Namespace) -> int:
 def _verify(arguments: argparse.Namespace) -> int:
     all_discrepancies: list[dict[str, object]] = []
     compared = 0
-    for name, details in EXPERIMENTS.items():
-        relative = Path(str(details["output"]))
+    for name, design in EXPERIMENTS.items():
+        relative = Path(design.output_directory)
         locked = arguments.against / relative
         candidate = arguments.candidate / relative
         if not locked.exists():

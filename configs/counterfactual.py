@@ -7,13 +7,14 @@ from dataclasses import dataclass
 import numpy as np
 
 from traceesus.core.config import ValidatedConfig
+from traceesus.core.seeds import ENDOTYPE_RECOVERY_SEED_ROOT
 
 
 @dataclass(frozen=True)
 class ExperimentConfig(ValidatedConfig):
     """All prespecified parameters for the preliminary experiment."""
 
-    seed: int = 20_260_728
+    seed: int = ENDOTYPE_RECOVERY_SEED_ROOT
     patients_per_repeat: int = 1_000
     repeats_per_level: int = 500
     renal_prevalence: float = 0.30

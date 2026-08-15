@@ -66,6 +66,7 @@ from traceesus.core.stats import (
     paired_mean_contrast,
     wilson_interval as _shared_wilson_interval,
 )
+from traceesus.core.seeds import EXAMPLE_PATIENT_SEED_OFFSET
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 from configs.endotype_discovery import ExperimentConfig, FittingConfig, SimulationConfig
 
@@ -728,7 +729,9 @@ def build_example_patient(
     """Create one reproducible strong-confounding example for interpretation."""
 
     renal_effect_sd = max(config.simulation.renal_effect_levels_sd)
-    seed_sequence = np.random.SeedSequence(config.master_seed + 808_080)
+    seed_sequence = np.random.SeedSequence(
+        config.master_seed + EXAMPLE_PATIENT_SEED_OFFSET
+    )
     sequences = seed_sequence.spawn(4)
     training = simulate_two_mechanism_cohort(
         np.random.default_rng(sequences[0]),

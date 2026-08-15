@@ -6,6 +6,7 @@ from dataclasses import replace
 from typing import Any
 
 import numpy as np
+import pandas as pd
 from numpy.random import Generator
 
 from configs.endotype_discovery import CONFIG
@@ -13,6 +14,7 @@ from traceesus.core.model import FittedModel, Model
 from traceesus.core.simulator import Cohort
 from traceesus.experiments.endotype_discovery.recovery import run_model_registry
 from traceesus.models.oracle import DataGeneratingOracle
+from traceesus.registry import FULL_LADDER, LOCKED_MODEL_SET, MODEL_LADDER
 
 
 class _FittedMinimalModel(FittedModel):
@@ -84,3 +86,59 @@ def test_minimal_model_runs_without_fit_result_or_diagnostics() -> None:
     assert parameters.columns.tolist() == ["repeat", "renal_effect_sd"]
     assert parameters["repeat"].tolist() == [0, 1]
 
+
+def test_model_sets_are_ordered_and_keep_legacy_causal_distinct() -> None:
+    """Lock the requested R1--R6 ladder and the separate four-row v3 set."""
+
+    assert tuple(code for code, _ in MODEL_LADDER) == (
+        "R1", "R2", "R3", "R4", "R5", "R6"
+    )
+    assert len(FULL_LADDER.names) == 6
+    assert len(LOCKED_MODEL_SET.names) == 4
+    assert LOCKED_MODEL_SET.names[:2] == FULL_LADDER.names[:2]
+    assert LOCKED_MODEL_SET.names[-1] == FULL_LADDER.names[-1]
+    assert LOCKED_MODEL_SET.names[2] not in FULL_LADDER.names
+
+
+def test_spawning_appended_children_preserves_existing_streams() -> None:
+    """Prove NumPy child streams 0..7 are invariant when four are appended."""
+
+    for seed in (0, CONFIG.master_seed, 2**63 + 17):
+        original = np.random.SeedSequence(seed).spawn(8)
+        extended = np.random.SeedSequence(seed).spawn(12)
+        for left, right in zip(original, extended[:8], strict=True):
+            np.testing.assert_array_equal(
+                left.generate_state(16, dtype=np.uint64),
+                right.generate_state(16, dtype=np.uint64),
+            )
+
+
+def test_full_ladder_preserves_shared_rows_and_only_adds_new_names() -> None:
+    """Compare both model sets through the same paired runner on a small design."""
+
+    simulation = replace(
+        CONFIG.simulation,
+        training_patients=80,
+        test_patients=90,
+        renal_effect_levels_sd=(0.5,),
+        renal_effect_labels=("Weak",),
+    )
+    config = replace(
+        CONFIG,
+        repeats_per_level=2,
+        workers=1,
+        simulation=simulation,
+    )
+    locked, _, _ = run_model_registry(config, LOCKED_MODEL_SET.fitted_models)
+    full, _, _ = run_model_registry(config, FULL_LADDER.fitted_models)
+    shared = set(LOCKED_MODEL_SET.names) & set(FULL_LADDER.names)
+    keys = ["repeat", "renal_effect_sd", "method"]
+    locked_shared = locked[locked["method"].isin(shared)].sort_values(keys)
+    full_shared = full[full["method"].isin(shared)].sort_values(keys)
+    pd.testing.assert_frame_equal(
+        locked_shared.reset_index(drop=True),
+        full_shared.reset_index(drop=True),
+        check_exact=True,
+    )
+    added = set(full["method"]) - set(locked["method"])
+    assert added == set(FULL_LADDER.names) - set(LOCKED_MODEL_SET.names)

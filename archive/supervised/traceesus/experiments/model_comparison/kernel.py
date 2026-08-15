@@ -39,7 +39,7 @@ from traceesus.core.runner import nested_seed_sequence_ledger
 from traceesus.core.io import write_manifest
 from configs.model_comparison import ComparisonConfig
 
-from traceesus.experiments.counterfactual.kernel import (
+from archive.counterfactual.kernel import (
     ATRIAL,
     COMPETING,
     ExperimentConfig,

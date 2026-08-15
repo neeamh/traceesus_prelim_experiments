@@ -13,11 +13,7 @@ import scipy
 
 from traceesus.core.experiment import Experiment
 from traceesus.core.io import write_json, write_manifest, write_standard_tables
-from traceesus.models import (
-    AdjustedLatentClassModel,
-    AssociativeLatentClassModel,
-    BiologicallyConstrainedCausalSCM,
-)
+from traceesus.registry import EndotypeModelSet, FULL_LADDER
 
 from . import kernel
 from .recovery import (
@@ -113,14 +109,12 @@ class EndotypeDiscoveryExperiment(Experiment):
         self,
         config: kernel.ExperimentConfig,
         output_directory: Path | str,
+        model_set: EndotypeModelSet = FULL_LADDER,
     ) -> None:
         self.config = config
         self.output_directory = Path(output_directory)
-        self.models = [
-            AssociativeLatentClassModel(),
-            AdjustedLatentClassModel(),
-            BiologicallyConstrainedCausalSCM(),
-        ]
+        self.model_set = model_set
+        self.models = model_set.fitted_models
         self.artifacts: EndotypeDiscoveryArtifacts | None = None
 
     def configure(self) -> kernel.ExperimentConfig:
@@ -155,7 +149,9 @@ class EndotypeDiscoveryExperiment(Experiment):
         artifacts = self.artifacts
         artifacts.summary = kernel.summarize_repeated_metrics(artifacts.raw_metrics)
         artifacts.contrasts = paired_registry_contrasts(
-            artifacts.raw_metrics, self.models
+            artifacts.raw_metrics,
+            self.models,
+            reference_method=self.model_set.contrast_reference,
         )
         artifacts.null_summary = kernel.summarize_k1_null(artifacts.raw_null)
         artifacts.validation_checks = registry_validation_checks(
@@ -165,6 +161,7 @@ class EndotypeDiscoveryExperiment(Experiment):
             artifacts.raw_null,
             self.config,
             self.models,
+            require_legacy_parameter_check=self.model_set.uses_legacy_parameter_check,
         )
         experiment_config = asdict(self.config)
         # HF-grid controls are additive extension settings, not inputs to the
@@ -175,11 +172,13 @@ class EndotypeDiscoveryExperiment(Experiment):
         simulation_config.pop("heart_failure_effect_levels_sd", None)
         artifacts.metadata = {
             "experiment_config": experiment_config,
-            "model_parameter_counts_k2": {
-                kernel.ASSOCIATIVE_LCA: 12,
-                kernel.ASSOCIATIVE_ADJUSTED: 14,
-                kernel.CAUSAL_SCM: 12,
-            },
+            "model_parameter_counts_k2": dict(
+                zip(
+                    (model.name for model in self.models),
+                    self.model_set.parameter_counts,
+                    strict=True,
+                )
+            ),
             "python_version": platform.python_version(),
             "numpy_version": np.__version__,
             "pandas_version": pd.__version__,

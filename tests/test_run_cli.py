@@ -24,9 +24,9 @@ def test_figures_command_points_to_notebook_without_mutating_outputs(
     assert "notebooks/figures.ipynb" in capsys.readouterr().out
 
 
-def test_cli_inventory_is_exactly_the_three_retained_experiments() -> None:
+def test_cli_inventory_is_exactly_the_two_retained_experiments() -> None:
     """Prevent archived or extension-only studies from re-entering the root CLI."""
 
-    expected = {"endotype_discovery", "transportability", "counterfactual"}
+    expected = {"endotype_discovery", "transportability"}
     assert set(run.EXPERIMENTS) == expected
     assert set(run.FACTORIES) == expected

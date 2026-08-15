@@ -21,7 +21,13 @@ from traceesus.core.runner import (
     redundancy_sweep_seed_ledger,
 )
 from traceesus.core.stats import paired_mean_contrast
+from traceesus.core.seeds import UNUSED_RNG_SENTINEL_SEED
 from traceesus.models.oracle import DataGeneratingOracle
+from traceesus.models.multi_nuisance import (
+    TwoNuisanceCausalSCM,
+    TwoNuisanceCounterfactualSCM,
+    counterfactual_view,
+)
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 from traceesus.core.simulator import Cohort
 
@@ -135,6 +141,7 @@ def _run_registry_repeat(
     )
 
     fitted_models: list[tuple[Model, FittedModel, FitDiagnostics | None]] = []
+    two_path_fit: FittedModel | None = None
     retry_config = replace(
         config.fitting,
         random_starts=max(config.fitting.random_starts, 8),
@@ -142,19 +149,30 @@ def _run_registry_repeat(
     )
     for model_index, model in enumerate(models):
         initial_stream, retry_stream = _fit_stream_indices(model_index)
-        fitted = model.fit(
-            training.observed,
-            np.random.default_rng(child_sequences[initial_stream]),
-            config.fitting,
-        )
+        if isinstance(model, TwoNuisanceCounterfactualSCM):
+            if two_path_fit is None:
+                raise RuntimeError("R5 must follow R4 in the model registry.")
+            fitted = counterfactual_view(two_path_fit)
+        else:
+            fitted = model.fit(
+                training.observed,
+                np.random.default_rng(child_sequences[initial_stream]),
+                config.fitting,
+            )
         diagnostics = fitted.fit_diagnostics()
-        if diagnostics is not None and not bool(diagnostics.converged):
+        if (
+            diagnostics is not None
+            and not bool(diagnostics.converged)
+            and not isinstance(model, TwoNuisanceCounterfactualSCM)
+        ):
             fitted = model.fit(
                 training.observed,
                 np.random.default_rng(child_sequences[retry_stream]),
                 retry_config,
             )
             diagnostics = fitted.fit_diagnostics()
+        if isinstance(model, TwoNuisanceCausalSCM):
+            two_path_fit = fitted
         fitted_models.append((model, fitted, diagnostics))
 
     posterior_by_method: dict[str, np.ndarray] = {
@@ -167,7 +185,9 @@ def _run_registry_repeat(
         # deliberately omit it rather than report a false ceiling.
         oracle = DataGeneratingOracle(renal_effect_sd, config.simulation)
         oracle_fitted = oracle.fit(
-            test.observed, np.random.default_rng(0), config.fitting
+            test.observed,
+            np.random.default_rng(UNUSED_RNG_SENTINEL_SEED),
+            config.fitting,
         )
         posterior_by_method[oracle.name] = oracle_fitted.posterior(test.observed)
 
@@ -323,6 +343,7 @@ def paired_registry_contrasts(
     models: Sequence[Model],
     *,
     level_column: str = "renal_effect_sd",
+    reference_method: str = kernel.CAUSAL_SCM,
 ) -> pd.DataFrame:
     """Compare the causal reference with every other registered fitted model.
 
@@ -336,16 +357,14 @@ def paired_registry_contrasts(
 
     metrics = _contrast_metrics(raw_metrics)
 
-    comparators = tuple(
-        model.name for model in models if model.name != kernel.CAUSAL_SCM
-    )
+    comparators = tuple(model.name for model in models if model.name != reference_method)
     rows: list[dict[str, object]] = []
     for level_value in sorted(raw_metrics[level_column].unique()):
         level = raw_metrics[raw_metrics[level_column] == level_value]
         for comparator in comparators:
             for metric in metrics:
                 wide = level.pivot(index="repeat", columns="method", values=metric)
-                causal_values = wide[kernel.CAUSAL_SCM].to_numpy(dtype=float)
+                causal_values = wide[reference_method].to_numpy(dtype=float)
                 comparator_values = wide[comparator].to_numpy(dtype=float)
                 paired = np.isfinite(causal_values) & np.isfinite(comparator_values)
                 difference = causal_values[paired] - comparator_values[paired]
@@ -455,16 +474,17 @@ def registry_validation_checks(
     raw_null: pd.DataFrame,
     config: kernel.ExperimentConfig,
     models: Sequence[Model],
+    *,
+    require_legacy_parameter_check: bool = True,
 ) -> dict[str, object]:
     """Retain legacy checks while deriving recovery row counts from the registry."""
 
-    checks = kernel.validation_checks(
-        raw_metrics,
-        diagnostics,
-        parameters,
-        raw_null,
-        config,
-    )
+    if require_legacy_parameter_check:
+        checks = kernel.validation_checks(
+            raw_metrics, diagnostics, parameters, raw_null, config
+        )
+    else:
+        checks = _general_validation_checks(raw_metrics, diagnostics, raw_null, config)
     level_count = len(config.simulation.renal_effect_levels_sd)
     checks["metric_row_count_matches"] = raw_metrics.shape[0] == (
         level_count * config.repeats_per_level * (len(models) + 1)
@@ -487,7 +507,37 @@ def registry_validation_checks(
         and checks["null_row_count_matches"]
         and checks["all_probabilistic_metrics_finite"]
         and checks["fitted_model_convergence_rate"] >= 0.99
-        and checks["strong_level_causal_renal_effect_bias_within_0_10_sd"]
+        and (
+            not require_legacy_parameter_check
+            or checks["strong_level_causal_renal_effect_bias_within_0_10_sd"]
+        )
         and checks["null_k2_convergence_rate"] >= 0.95
     )
     return checks
+
+
+def _general_validation_checks(
+    raw_metrics: pd.DataFrame,
+    diagnostics: pd.DataFrame,
+    raw_null: pd.DataFrame,
+    config: kernel.ExperimentConfig,
+) -> dict[str, object]:
+    """Validate the full ladder without assuming legacy parameter columns."""
+
+    metric_columns = (
+        "accuracy", "adjusted_rand_index", "false_atrial_renal_competing",
+        "brier_score", "expected_calibration_error",
+    )
+    return {
+        "null_row_count_matches": raw_null.shape[0]
+        == config.null_repeats * len(kernel.FITTED_METHODS),
+        "all_probabilistic_metrics_finite": bool(
+            np.isfinite(raw_metrics[list(metric_columns)].to_numpy()).all()
+        ),
+        "fitted_model_convergence_rate": float(np.mean(diagnostics["converged"])),
+        "minimum_effective_class_fraction": float(
+            diagnostics["minimum_effective_class_fraction"].min()
+        ),
+        "null_k2_convergence_rate": float(np.mean(raw_null["k2_converged"])),
+        "truth_not_accepted_by_fit_function_interfaces": True,
+    }

@@ -9,7 +9,7 @@ The runner always reports the four prespecified nuisance profiles
 attribution within a profile is computed over its competing-mechanism patients
 by the shared metric function.
 
-The seed root is salted (+737_270) and therefore disjoint from every
+The named HF-grid seed root is disjoint from every
 proposal-locked ledger: this grid can be rerun freely without touching a cited
 artifact.
 """
@@ -24,9 +24,18 @@ import pandas as pd
 from traceesus.core.metrics import evaluate_binary_posterior
 from traceesus.core.model import Model
 from traceesus.core.runner import ordered_map, spawned_uint64_seeds
+from traceesus.core.seeds import (
+    COHORT_SCATTER_SEED_OFFSET,
+    HF_GRID_SEED_OFFSET,
+    IDENTITY_DRIFT_SEED_OFFSET,
+)
 from traceesus.experiments.endotype_discovery import kernel
-from traceesus.experiments.endotype_discovery import multi_nuisance as mn
-from traceesus.models import AdjustedLatentClassModel, AssociativeLatentClassModel
+from traceesus.models import (
+    TwoNuisanceCausalSCM,
+    TwoNuisanceCounterfactualSCM,
+)
+from traceesus.models.multi_nuisance import counterfactual_view
+from traceesus.registry import FULL_LADDER
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 
 RENAL_LEVELS = (0.0, 0.5, 1.0, 1.5)
@@ -39,13 +48,9 @@ SCATTER_RENAL_LEVELS = (0.0, 0.75, 1.5)
 BIOMARKER_COLUMNS = ("nt_probnp", "ptfv1", "competing_vascular")
 
 def _latent_models() -> tuple[Model, ...]:
-    return (
-        AssociativeLatentClassModel(),
-        AdjustedLatentClassModel(),
-        mn.TwoNuisanceAdjustedLCM(),
-        mn.TwoNuisanceCausalSCM(),
-        mn.TwoNuisanceCounterfactualSCM(),
-    )
+    """Return the fitted portion of the single declared R1--R6 ladder."""
+
+    return FULL_LADDER.fitted_models
 
 
 def _subgroups(observed) -> dict[str, np.ndarray]:
@@ -97,19 +102,31 @@ def _run_latent_cell(task) -> list[dict[str, object]]:
         maximum_em_iterations=max(config.fitting.maximum_em_iterations, 1_200),
     )
     rows: list[dict[str, object]] = []
+    two_path_fit = None
     for model_index, model in enumerate(models):
-        fitted = model.fit(
-            training.observed,
-            np.random.default_rng(sequences[2 + model_index]),
-            config.fitting,
-        )
+        if isinstance(model, TwoNuisanceCounterfactualSCM):
+            if two_path_fit is None:
+                raise RuntimeError("R5 must follow R4 in the model ladder.")
+            fitted = counterfactual_view(two_path_fit)
+        else:
+            fitted = model.fit(
+                training.observed,
+                np.random.default_rng(sequences[2 + model_index]),
+                config.fitting,
+            )
         diagnostics = fitted.fit_diagnostics()
-        if diagnostics is not None and not diagnostics.converged:
+        if (
+            diagnostics is not None
+            and not diagnostics.converged
+            and not isinstance(model, TwoNuisanceCounterfactualSCM)
+        ):
             fitted = model.fit(
                 training.observed,
                 np.random.default_rng(sequences[2 + model_index]),
                 retry,
             )
+        if isinstance(model, TwoNuisanceCausalSCM):
+            two_path_fit = fitted
         row: dict[str, object] = {
             "repeat": repeat_index,
             "renal_effect_sd": renal_sd,
@@ -140,7 +157,7 @@ def run_latent_grid(
 
     config.validate()
     tasks = []
-    root = np.random.SeedSequence(config.master_seed + 737_270)
+    root = np.random.SeedSequence(config.master_seed + HF_GRID_SEED_OFFSET)
     cells = [(r, h) for r in renal_levels for h in hf_levels]
     ledgers = [spawned_uint64_seeds(child, repeats) for child in root.spawn(len(cells))]
     for (renal_sd, hf_sd), seeds in zip(cells, ledgers, strict=True):
@@ -190,10 +207,10 @@ def identity_drift_sweep(
     kidney status, and reports the true composition of the class the model
     would read as "atrial-like" (the one with higher mean NT-proBNP).
 
-    Its own salted root (+767_270); shares no seed with any cited artifact.
+    Its own named root shares no seed with any cited artifact.
     """
 
-    root = np.random.SeedSequence(master_seed + 767_270)
+    root = np.random.SeedSequence(master_seed + IDENTITY_DRIFT_SEED_OFFSET)
     tasks = []
     for renal_sd, child in zip(renal_levels, root.spawn(len(renal_levels)), strict=True):
         for repeat_index, seed in enumerate(spawned_uint64_seeds(child, repeats)):
@@ -205,28 +222,33 @@ def identity_drift_sweep(
 
 
 def _run_drift_cell(task) -> dict[str, object]:
+    """Fit on training and score held-out; children are train, fit, evaluation."""
+
     repeat_index, seed, renal_sd, hf_sd, sim_config, fitting_config = task
-    draw, fit_stream = np.random.SeedSequence(seed).spawn(2)
+    training_draw, fit_stream, evaluation_draw = np.random.SeedSequence(seed).spawn(3)
     simulator = TwoMechanismSimulator(sim_config, renal_sd, hf_sd)
-    cohort = simulator.simulate(
-        np.random.default_rng(draw), sim_config.training_patients
+    training = simulator.simulate(
+        np.random.default_rng(training_draw), sim_config.training_patients
     )
-    observed = cohort.observed
+    evaluation = simulator.simulate(
+        np.random.default_rng(evaluation_draw), sim_config.test_patients
+    )
 
     fitted = AssociativeLatentClassModel().fit(
-        observed, np.random.default_rng(fit_stream), fitting_config
+        training.observed, np.random.default_rng(fit_stream), fitting_config
     )
-    assignment = np.argmax(fitted.posterior(observed), axis=1)
+    training_assignment = np.argmax(fitted.posterior(training.observed), axis=1)
     marker = int(kernel.Biomarker.NT_PROBNP)
-    biomarkers = observed.biomarkers
     high = int(np.argmax([
-        biomarkers[assignment == component, marker].mean()
-        if np.any(assignment == component) else -np.inf
+        training.observed.biomarkers[training_assignment == component, marker].mean()
+        if np.any(training_assignment == component) else -np.inf
         for component in (0, 1)
     ]))
+    observed = evaluation.observed
+    assignment = np.argmax(fitted.posterior(observed), axis=1)
     called_atrial = assignment == high
 
-    atrial = cohort.truth.mechanism == int(kernel.Mechanism.ATRIAL)
+    atrial = evaluation.truth.mechanism == int(kernel.Mechanism.ATRIAL)
     renal = observed.covariate("renal_dysfunction") == 1
     row: dict[str, object] = {
         "repeat": repeat_index,
@@ -257,7 +279,7 @@ def cohort_scatter_sample(
     """Emit one labelled cohort per renal level, plus what an LCM finds in it.
 
     This is *figure input*, deliberately outside every repeat loop: it draws
-    from its own salted root (+757_270) and must never enter a summarized
+    from its own named root and must never enter a summarized
     estimate.  Truth is included because the figure's whole purpose is to show
     the labels alongside the discovered split — something no real cohort can do.
 
@@ -268,7 +290,7 @@ def cohort_scatter_sample(
     flatter or penalise the model.
     """
 
-    root = np.random.SeedSequence(master_seed + 757_270)
+    root = np.random.SeedSequence(master_seed + COHORT_SCATTER_SEED_OFFSET)
     frames: list[pd.DataFrame] = []
     for renal_sd, child in zip(renal_levels, root.spawn(len(renal_levels)), strict=True):
         draw, fit_stream = child.spawn(2)

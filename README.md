@@ -1,6 +1,6 @@
 # TRACE-ESUS experiments
 
-TRACE-ESUS is a simulation package for three scientific experiments on causal endotyping in cryptogenic stroke. Endotype discovery and transportability fit without mechanism labels; the preliminary counterfactual experiment queries a known data-generating SCM rather than fitting one.
+TRACE-ESUS is a simulation package with two active experiments on causal endotyping in cryptogenic stroke: endotype discovery and transportability. The preliminary known-parameter counterfactual experiment is archived.
 
 The package retains the legacy numerical kernels because the existing tables are cited in an NIH proposal and manuscript. Refactoring is not permission to change a seed, numerical default, iteration order, reduction order, or algorithm. Suspected defects and limitations are recorded in [`NOTES.md`](NOTES.md) and deliberately remain unchanged.
 
@@ -77,13 +77,15 @@ exact_no_shift_control/
   validation_checks.json
 ```
 
-### `counterfactual`: known-DGP query comparison
+### ARCHIVED — `counterfactual`: known-DGP query comparison
 
 Scientific question: in the preliminary symmetric K=2 simulation, how do a kidney-blind posterior, a kidney-aware posterior, and posterior-integrated sufficiency/disablement scoring behave as renal distortion increases?
 
 This experiment does **not** fit an SCM. The kidney-aware posterior and counterfactual scores use the known data-generating parameters, including the true renal effect at each simulation level. They are oracle/known-model queries, not evidence that a fitted causal model has learned those quantities. Sufficiency and disablement are monotone transformations of the correctly specified posterior in this symmetric design, so they cannot outperform that same-SCM posterior in top-rank classification. The K=1 null control likewise removes the known renal contribution before fitting its Gaussian models.
 
-Legacy output directory: `outputs/`
+Archived source: `archive/counterfactual/`
+
+Immutable provenance: `outputs_locked/outputs/`
 
 ```text
 main_simulation_raw_metrics.csv
@@ -138,13 +140,10 @@ python run.py figures endotype_discovery
 python run.py verify --against ./outputs_locked
 ```
 
-`--repeats` overrides each experiment's repeat count for runtime estimation. It does not define a proposal-equivalent run. `--workers` preserves ordered result collection. For one experiment, `--out` is that experiment's output directory. For `run all`, it is a parent directory under which the three retained directory names are created.
+`--repeats` overrides each experiment's repeat count for runtime estimation. It does not define a proposal-equivalent run. `--workers` preserves ordered result collection. For one experiment, `--out` is that experiment's output directory. For `run all`, it is a parent directory under which the two retained directory names are created.
 
-`figures` reads the existing compatibility tables and regenerates figures without rerunning simulation. It requires the corresponding CSV/JSON outputs to already exist.
-When a manifest is present, the command restores that run's exact nested config
-(including smoke-repeat and worker overrides), preserves the experiment
-runtime, refreshes artifact checksums, and records a separate
-`figures_only` operation runtime.
+`figures` prints the path to `notebooks/figures.ipynb`. The notebook reads the
+committed CSV outputs and does not rerun simulation.
 
 ## Configuration map
 
@@ -157,8 +156,8 @@ Experiment config classes and their `CONFIG` instances are defined in the releva
 | Latent repeats, master seed, worker count, validation thresholds | `configs/endotype_discovery.py` (`ExperimentConfig`) |
 | Hospital definitions, assay transforms, nuisance shifts, missingness, target scenarios | `configs/transportability.py` (`HospitalSpec`, `TransportSimulationConfig`) |
 | Transport repeats, master seed, source/target sizes, fitting controls, workers | `configs/transportability.py` (`TransportExperimentConfig`) |
-| Known-DGP effects, renal grid, sample sizes, seed, counterfactual and K=1-null controls | `configs/counterfactual.py` (`ExperimentConfig`) |
-| Shared visual palette and sizing only | `traceesus/plotting/theme.py` |
+| Archived known-DGP counterfactual controls | `configs/counterfactual.py` and `archive/counterfactual/` |
+| Shared visual palette and sizing only | `traceesus/plotting/style.py` |
 
 A numerical change creates a new scientific result. Preserve the old config and locked outputs, record the change, and write to a new output location rather than overwriting cited artifacts.
 
@@ -168,7 +167,7 @@ The unlabeled model registry is the extension point for the planned source-of-ga
 
 1. Add a `FittedModel` subclass under `traceesus/models/`. Implement `posterior(data) -> np.ndarray` with shape `(n, K)`, optional `counterfactual_scores(data)`, and the exact `n_parameters` used by BIC.
 2. Add a `Model` subclass with a stable `name` and `fit(data: Cohort, rng: Generator, config: FittingConfig)`. `Cohort` contains observed fields only; do not add truth or label parameters to this interface.
-3. Append the model instance to the registry in `traceesus/experiments/endotype_discovery/experiment.py`. Do not reorder existing rows: registry order is part of the fit-stream and output-row contract.
+3. Append the model instance to `FULL_LADDER` in `traceesus/registry.py`. Do not reorder existing rows: registry order is part of the fit-stream and output-row contract.
 4. Run the reproducibility tests and a paired smoke experiment. `run_model_registry()` simulates the training/test cohorts once per repeat, then gives every registered model those identical cohorts under the same repeat seed ledger. It also evaluates every posterior through the common metric path.
 5. Add the new method to the ablation's prespecified contrast/plot specification only if the requested table needs it. Do not let an oracle enter the fitted-model registry: `DataGeneratingOracle` remains an evaluation-only ceiling.
 
@@ -211,6 +210,6 @@ For future changes, run:
 python -m pytest
 ```
 
-`tests/test_reproducibility.py` is the fast repeat-level sentinel. It complements, rather than replaces, the full four-experiment locked-output comparison.
+`tests/test_reproducibility.py` is the fast repeat-level sentinel. It complements, rather than replaces, the full exact comparison for the two active experiments; the archived counterfactual baseline remains preserved as provenance.
 The completed proposal-lock comparison, environment, counts, runtimes, and
 zero-discrepancy result are recorded in [`VERIFICATION.md`](VERIFICATION.md).

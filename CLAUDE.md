@@ -77,8 +77,8 @@ Current written Specific Aims (Drive doc "04 - Specific Aims"):
 
 ## 4. VERIFIED PRELIMINARY RESULTS
 
-The active package contains exactly three experiments: `endotype_discovery`, `transportability`,
-and `counterfactual`. All retained results are local and reproducible with saved CSV/JSON. Master
+The active package contains exactly two experiments: `endotype_discovery` and `transportability`.
+The standalone `counterfactual` experiment is archived. All retained results are local and reproducible with saved CSV/JSON. Master
 seed 20260728. Python 3.12.0, numpy 1.26.4, pandas 2.2.2, scipy 1.14.1.
 **Never cite a number that is not in this section or in the named CSV.**
 
@@ -176,7 +176,11 @@ classification, NOT endotype discovery.** At strong confounding (2.25 SD):
 SCM − kidney-adjusted logistic = **+0.005 pp accuracy, CI [−0.013, +0.023] — includes zero.**
 Once you adjust correctly, the counterfactual query adds nothing here.
 
-### 4.6 Counterfactual == posterior — and the collapse is ANALYTIC, not empirical
+### 4.6 ARCHIVED — Counterfactual == posterior — and the collapse is ANALYTIC, not empirical
+The standalone experiment is retained under `archive/counterfactual/`, with immutable output
+provenance under `outputs_locked/outputs/`. Its fitted replacement is R4 versus R5 in endotype
+discovery: posterior and counterfactual queries applied to the same fitted two-path SCM.
+
 `outputs/main_simulation_summary.csv` · "Counterfactual scoring (kidney-aware)" and "Posterior (same
 kidney-aware SCM)" produce **byte-identical means at every confounding level** (0.8114 accuracy /
 0.1364 false atrial at 0.75 SD; identical at 0, 1.5, 2.25 SD). Kidney-blind posterior collapses to

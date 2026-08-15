@@ -9,8 +9,6 @@ from typing import Any, get_type_hints
 import numpy as np
 import pytest
 
-from configs.counterfactual import CONFIG as COUNTERFACTUAL_CONFIG
-from configs.counterfactual import ExperimentConfig as CounterfactualConfig
 from configs.endotype_discovery import (
     CONFIG as ENDOTYPE_CONFIG,
     ExperimentConfig as EndotypeExperimentConfig,
@@ -23,7 +21,6 @@ from configs.transportability import (
     TransportExperimentConfig,
     TransportSimulationConfig,
 )
-from traceesus.experiments.counterfactual import kernel as counterfactual_kernel
 from traceesus.experiments.endotype_discovery import kernel as endotype_kernel
 from traceesus.experiments.transportability import kernel as transport_kernel
 from traceesus.models.modular_causal_scm import (
@@ -38,7 +35,6 @@ from traceesus.queries.posterior import anchor_order
 @pytest.mark.parametrize(
     "config",
     (
-        COUNTERFACTUAL_CONFIG,
         ENDOTYPE_CONFIG,
         TRANSPORT_CONFIG,
     ),
@@ -64,7 +60,6 @@ def test_config_classes_are_owned_by_the_visible_config_modules() -> None:
     """Keep parameter definitions where ``run.py list`` tells users to edit them."""
 
     classes = (
-        CounterfactualConfig,
         SimulationConfig,
         FittingConfig,
         EndotypeExperimentConfig,
@@ -75,7 +70,6 @@ def test_config_classes_are_owned_by_the_visible_config_modules() -> None:
     assert all(config_type.__module__.startswith("configs.") for config_type in classes)
 
     # Kernels re-export the same class objects for legacy scripts and notebooks.
-    assert counterfactual_kernel.ExperimentConfig is CounterfactualConfig
     assert endotype_kernel.ExperimentConfig is EndotypeExperimentConfig
     assert transport_kernel.TransportExperimentConfig is TransportExperimentConfig
 
@@ -97,7 +91,6 @@ def test_plotting_package_contains_style_only() -> None:
 
     plotting = Path(__file__).resolve().parents[1] / "traceesus" / "plotting"
     assert {path.name for path in plotting.glob("*.py")} == {"__init__.py", "style.py"}
-    assert not hasattr(counterfactual_kernel, "plot_primary_figure")
     assert not hasattr(endotype_kernel, "plot_primary_figure")
     assert not hasattr(transport_kernel, "plot_transport_figure")
     assert DEFAULT_FONT == "DejaVu Sans"
@@ -118,31 +111,6 @@ def test_only_style_module_imports_matplotlib() -> None:
         or "from matplotlib" in path.read_text(encoding="utf-8")
     }
     assert importers == {"plotting/style.py"}
-
-
-def test_two_mechanism_kernels_retain_distinct_dtype_contracts() -> None:
-    """Guard an intentional non-unification that could change cited arithmetic."""
-
-    latent_rng = np.random.default_rng(12345)
-    latent = endotype_kernel.simulate_two_mechanism_cohort(
-        latent_rng,
-        12,
-        0.75,
-        ENDOTYPE_CONFIG.simulation,
-    )
-
-    preliminary_config = replace(COUNTERFACTUAL_CONFIG, patients_per_repeat=12)
-    preliminary_rng = np.random.default_rng(12345)
-    preliminary = counterfactual_kernel.simulate_two_mechanism_study(
-        preliminary_config,
-        0.75,
-        preliminary_rng,
-    )
-
-    assert latent.renal_dysfunction.dtype == np.dtype(np.int8)
-    assert latent.true_mechanism.dtype == np.dtype(np.int8)
-    assert preliminary["renal"].dtype == np.dtype(int)
-    assert preliminary["mechanism"].dtype == np.dtype(int)
 
 
 def _legacy_anchor_reference(

@@ -11,7 +11,7 @@ import pandas as pd
 from traceesus.core.experiment import Experiment
 from traceesus.core.data_dictionary import write_data_dictionary
 from traceesus.core.io import write_json, write_manifest, write_standard_tables
-from traceesus.models.known_scm import (
+from archive.counterfactual.known_scm import (
     KnownKidneyBlindPosteriorModel,
     KnownStructuralCausalModel,
 )

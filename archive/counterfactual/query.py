@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from traceesus.experiments.counterfactual import kernel
+from archive.counterfactual import kernel
 
 
 def kidney_blind_posterior(

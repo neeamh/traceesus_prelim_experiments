@@ -7,6 +7,12 @@ from typing import Callable, Iterable, Sequence, TypeVar
 
 import numpy as np
 
+from traceesus.core.seeds import (
+    ENDOTYPE_NULL_SEED_OFFSET,
+    REDUNDANCY_SWEEP_SEED_OFFSET,
+    TRANSPORT_SEED_OFFSET,
+)
+
 T = TypeVar("T")
 R = TypeVar("R")
 
@@ -75,9 +81,11 @@ def latent_recovery_seed_ledger(
 
 
 def latent_null_seed_ledger(master_seed: int, repeats: int) -> list[int]:
-    """Return the exact K=1 null ledger rooted at ``master_seed + 91_337``."""
+    """Return the exact K=1 null ledger using the named null offset."""
 
-    return spawned_uint64_seeds(np.random.SeedSequence(master_seed + 91_337), repeats)
+    return spawned_uint64_seeds(
+        np.random.SeedSequence(master_seed + ENDOTYPE_NULL_SEED_OFFSET), repeats
+    )
 
 
 def redundancy_sweep_seed_ledger(
@@ -85,18 +93,22 @@ def redundancy_sweep_seed_ledger(
     level_count: int,
     repeats_per_level: int,
 ) -> list[list[int]]:
-    """Return HF-sweep seeds rooted at ``master_seed + 515_150``.
+    """Return HF-sweep seeds rooted at the named redundancy offset.
 
     The distinct salt guarantees the sweep shares no seed with the locked
     recovery ledger or the K=1 null, so redundancy results can never be
     mistaken for — or perturb — a proposal-cited artifact.
     """
 
-    levels = np.random.SeedSequence(master_seed + 515_150).spawn(level_count)
+    levels = np.random.SeedSequence(
+        master_seed + REDUNDANCY_SWEEP_SEED_OFFSET
+    ).spawn(level_count)
     return [spawned_uint64_seeds(level, repeats_per_level) for level in levels]
 
 
 def transport_seed_ledger(master_seed: int, repeats: int) -> list[int]:
-    """Return transport repeat seeds rooted at ``master_seed + 404_404``."""
+    """Return transport repeat seeds rooted at the named transport offset."""
 
-    return spawned_uint64_seeds(np.random.SeedSequence(master_seed + 404_404), repeats)
+    return spawned_uint64_seeds(
+        np.random.SeedSequence(master_seed + TRANSPORT_SEED_OFFSET), repeats
+    )

@@ -15,8 +15,8 @@ PACKAGE_ROOT = Path(__file__).resolve().parent
 if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
-from traceesus.experiments.counterfactual.kernel import *  # noqa: F401,F403,E402
-from traceesus.experiments.counterfactual.kernel import main as _main  # noqa: E402
+from archive.counterfactual.kernel import *  # noqa: F401,F403,E402
+from archive.counterfactual.kernel import main as _main  # noqa: E402
 
 
 if __name__ == "__main__":

@@ -112,13 +112,14 @@ from r21_latent_endotyping_experiment import (
     fit_conditional_latent_model,
     simulate_two_mechanism_cohort,
 )
+from traceesus.core.seeds import ENDOTYPE_RECOVERY_SEED_ROOT
 
 PROJECT_DIRECTORY = Path.cwd()
 OUTPUT_DIRECTORY = PROJECT_DIRECTORY / "outputs_latent_endotyping"
 RUN_FULL_SIMULATION = False  # Set True to regenerate all 500-repeat outputs.
 
 config = ExperimentConfig(
-    master_seed=20_260_728,
+    master_seed=ENDOTYPE_RECOVERY_SEED_ROOT,
     repeats_per_level=500,
     null_repeats=500,
     null_renal_effect_sd=1.50,
@@ -214,7 +215,7 @@ exists separately inside the simulator object and is not passed into a fit.
     code(
         """
 preview = simulate_two_mechanism_cohort(
-    np.random.default_rng(20260728),
+    np.random.default_rng(ENDOTYPE_RECOVERY_SEED_ROOT),
     patient_count=8,
     renal_effect_sd=1.50,
     config=config.simulation,

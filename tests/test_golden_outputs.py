@@ -19,12 +19,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from configs.counterfactual import CONFIG as COUNTERFACTUAL_CONFIG
 from configs.endotype_discovery import CONFIG as ENDOTYPE_CONFIG
 from configs.transportability import CONFIG as TRANSPORT_CONFIG
-from traceesus.experiments.counterfactual import CounterfactualExperiment
 from traceesus.experiments.endotype_discovery import EndotypeDiscoveryExperiment
 from traceesus.experiments.transportability import TransportabilityExperiment
+from traceesus.registry import LOCKED_MODEL_SET
 from scripts.em_unification_delta import build_report, confidence_interval_crossings
 from scripts.conditional_em_unification_delta import (
     conditional_crossings,
@@ -60,12 +59,6 @@ EXPERIMENTS = (
         "outputs_transportability",
         TRANSPORT_CONFIG,
         TransportabilityExperiment,
-    ),
-    ExperimentSpecification(
-        "counterfactual",
-        "outputs",
-        COUNTERFACTUAL_CONFIG,
-        CounterfactualExperiment,
     ),
 )
 
@@ -140,7 +133,12 @@ def golden_run(
     specification = request.param
     run_root = tmp_path_factory.mktemp(f"golden-{specification.name}")
     candidate = run_root / specification.output_directory
-    specification.experiment_type(specification.config, candidate).execute()
+    if specification.name == "endotype_discovery":
+        specification.experiment_type(
+            specification.config, candidate, LOCKED_MODEL_SET
+        ).execute()
+    else:
+        specification.experiment_type(specification.config, candidate).execute()
     return (
         V3_ROOT / specification.output_directory,
         candidate,

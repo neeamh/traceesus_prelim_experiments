@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 
 from configs.endotype_discovery import FittingConfig
 from traceesus.core.config import ValidatedConfig
+from traceesus.core.seeds import ENDOTYPE_RECOVERY_SEED_ROOT
 
 
 _BIOMARKER_COUNT = 3
@@ -207,7 +208,7 @@ class TransportSimulationConfig(ValidatedConfig):
 class TransportExperimentConfig(ValidatedConfig):
     """Exact repeat, seed, fitting, and hospital controls for transportability."""
 
-    master_seed: int = 20_260_728
+    master_seed: int = ENDOTYPE_RECOVERY_SEED_ROOT
     repeats: int = 500
     workers: int = 1
     equivalence_margin_accuracy: float = 0.01

@@ -196,7 +196,7 @@ class TransportabilityExperiment(Experiment):
 
     The main curve, one-component shift ablation, and literal identical-source-
     target control all use the frozen repeat kernel. That kernel deliberately
-    preserves ``master_seed + 404404``, twelve child streams per repeat, target
+    preserves ``master_seed + TRANSPORT_SEED_OFFSET``, twelve child streams per repeat, target
     seeds from children 9 and 10 reset at every shift, and unused child 11.
     Model objects document the interchangeable posterior contract; the frozen
     repeat kernel remains authoritative for cited numbers and RNG consumption.

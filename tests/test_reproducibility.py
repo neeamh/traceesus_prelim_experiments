@@ -29,11 +29,11 @@ os.environ.setdefault("XDG_CACHE_HOME", str(_CACHE_ROOT / "xdg"))
 import numpy as np
 import pytest
 
-from configs.counterfactual import CONFIG as COUNTERFACTUAL_CONFIG
 from configs.endotype_discovery import CONFIG as ENDOTYPE_CONFIG
 from configs.transportability import CONFIG as TRANSPORT_CONFIG
 from traceesus.core.io import sha256_file
 from traceesus.core.model import Model, assert_truth_free_fit_interfaces
+from traceesus.core.seeds import ENDOTYPE_RECOVERY_SEED_ROOT
 from traceesus.core.runner import (
     latent_null_seed_ledger,
     latent_recovery_seed_ledger,
@@ -41,9 +41,9 @@ from traceesus.core.runner import (
     transport_seed_ledger,
 )
 from traceesus.core.simulator import Cohort
-from traceesus.experiments.counterfactual import CounterfactualExperiment
 from traceesus.experiments.endotype_discovery import EndotypeDiscoveryExperiment
 from traceesus.experiments.transportability import TransportabilityExperiment
+from traceesus.registry import LOCKED_MODEL_SET
 from traceesus.models import (
     AdjustedLatentClassModel,
     AssociativeLatentClassModel,
@@ -114,20 +114,15 @@ def reproducibility_runs(
             replace(TRANSPORT_CONFIG, repeats=2, workers=1),
             TransportabilityExperiment,
         ),
-        "counterfactual": (
-            replace(
-                COUNTERFACTUAL_CONFIG,
-                repeats_per_level=2,
-                null_repeats=2,
-            ),
-            CounterfactualExperiment,
-        ),
     }
 
     completed: dict[str, dict[str, Any]] = {}
     for name, (config, experiment_type) in specifications.items():
         output_directory = root / EXPECTED["experiments"][name]["output_directory"]
-        experiment = experiment_type(config, output_directory)
+        if name == "endotype_discovery":
+            experiment = experiment_type(config, output_directory, LOCKED_MODEL_SET)
+        else:
+            experiment = experiment_type(config, output_directory)
         result = experiment.execute()
         completed[name] = {
             "config": config,
@@ -137,7 +132,9 @@ def reproducibility_runs(
     return completed
 
 
-@pytest.mark.parametrize("experiment_name", tuple(EXPECTED["experiments"]))
+@pytest.mark.parametrize(
+    "experiment_name", ("endotype_discovery", "transportability")
+)
 def test_every_legacy_csv_and_json_has_locked_sha256(
     experiment_name: str,
     reproducibility_runs: dict[str, dict[str, Any]],
@@ -150,7 +147,9 @@ def test_every_legacy_csv_and_json_has_locked_sha256(
     assert actual == expected
 
 
-@pytest.mark.parametrize("experiment_name", tuple(EXPECTED["experiments"]))
+@pytest.mark.parametrize(
+    "experiment_name", ("endotype_discovery", "transportability")
+)
 def test_manifest_inventory_and_checksums_are_complete(
     experiment_name: str,
     reproducibility_runs: dict[str, dict[str, Any]],
@@ -179,18 +178,18 @@ def test_manifest_inventory_and_checksums_are_complete(
 def test_seed_ledgers_match_locked_sentinels() -> None:
     """Lock the audited uint64 repeat seeds and nested target seed streams."""
 
-    assert latent_recovery_seed_ledger(20_260_728, 4, 2) == [
+    assert latent_recovery_seed_ledger(ENDOTYPE_RECOVERY_SEED_ROOT, 4, 2) == [
         [16_189_921_146_218_001_160, 15_513_242_208_653_705_928],
         [12_682_294_075_236_838_282, 13_107_041_859_235_158_231],
         [6_981_041_078_731_962_955, 13_358_525_377_037_369_752],
         [13_533_547_887_973_413_680, 4_438_523_213_558_081_714],
     ]
-    assert latent_null_seed_ledger(20_260_728, 2) == [
+    assert latent_null_seed_ledger(ENDOTYPE_RECOVERY_SEED_ROOT, 2) == [
         6_569_377_144_667_487_967,
         5_967_866_994_814_613_138,
     ]
 
-    transport_seeds = transport_seed_ledger(20_260_728, 2)
+    transport_seeds = transport_seed_ledger(ENDOTYPE_RECOVERY_SEED_ROOT, 2)
     assert transport_seeds == [
         8_829_251_784_368_036_273,
         18_035_949_171_693_999_477,

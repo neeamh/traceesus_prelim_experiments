@@ -33,12 +33,12 @@ import scipy
 from traceesus.core.experiment import Experiment
 from traceesus.core.io import write_json, write_manifest
 from traceesus.core.stats import monte_carlo_summary
-from traceesus.models import (
-    AdjustedLatentClassModel,
-    AssociativeLatentClassModel,
-    BiologicallyConstrainedCausalSCM,
-    CounterfactualCausalSCM,
+from traceesus.core.seeds import (
+    REDUNDANCY_QUADRANT_SEED_OFFSET,
+    REDUNDANCY_SWEEP_SEED_ROOT,
 )
+from traceesus.models import TwoNuisanceCounterfactualSCM
+from traceesus.registry import FULL_LADDER
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 
 from . import kernel
@@ -76,12 +76,7 @@ class RedundancySweepExperiment(Experiment):
         # fitted by the same EM on the same cohort and paired seed, answered by
         # sufficiency/disablement instead of the posterior.  Any difference
         # between rows three and four is attributable to the query alone.
-        self.models = [
-            AssociativeLatentClassModel(),
-            AdjustedLatentClassModel(),
-            BiologicallyConstrainedCausalSCM(),
-            CounterfactualCausalSCM(),
-        ]
+        self.models = FULL_LADDER.fitted_models
         self.artifacts: RedundancySweepArtifacts | None = None
 
     def configure(self) -> kernel.ExperimentConfig:
@@ -171,7 +166,7 @@ class RedundancySweepExperiment(Experiment):
                 self.config.simulation.heart_failure_effect_levels_sd
             ),
             "heart_failure_prevalence": self.config.simulation.heart_failure_prevalence,
-            "seed_root": "master_seed + 515_150 (independent of every locked ledger)",
+            "seed_root": REDUNDANCY_SWEEP_SEED_ROOT,
             "oracle_note": (
                 "The renal-only data-generating oracle is excluded: under a "
                 "nonzero heart-failure path it is not the true-DGP ceiling."
@@ -210,13 +205,13 @@ class RedundancySweepExperiment(Experiment):
 
         config = self.config
         fixed_renal = config.null_renal_effect_sd
-        model = CounterfactualCausalSCM()
+        model = TwoNuisanceCounterfactualSCM()
         rows: list[dict[str, object]] = []
         for level_index, hf_level in enumerate(
             config.simulation.heart_failure_effect_levels_sd
         ):
             sequences = np.random.SeedSequence(
-                config.master_seed + 626_260 + level_index
+                config.master_seed + REDUNDANCY_QUADRANT_SEED_OFFSET + level_index
             ).spawn(3)
             simulator = TwoMechanismSimulator(config.simulation, fixed_renal, hf_level)
             training = simulator.simulate(

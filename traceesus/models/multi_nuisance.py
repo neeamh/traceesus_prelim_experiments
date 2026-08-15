@@ -310,3 +310,24 @@ class TwoNuisanceCounterfactualSCM(Model):
 
     def fit(self, data: Cohort, rng: Generator, config) -> _FittedTwoNuisance:
         return _fit(data, rng, config, BIOLOGY_MASK, "counterfactual")
+
+
+def counterfactual_view(fitted: FittedModel) -> _FittedTwoNuisance:
+    """Answer the counterfactual query using an existing two-path fitted SCM."""
+
+    if not isinstance(fitted, _FittedTwoNuisance) or fitted.query != "posterior":
+        raise TypeError("R5 requires the fitted R4 posterior model.")
+    return _FittedTwoNuisance(fitted.fit_result, "counterfactual")
+
+
+__all__ = [
+    "ADJUSTED_TWO_NUISANCE",
+    "BIOLOGY_MASK",
+    "CAUSAL_TWO_NUISANCE",
+    "COUNTERFACTUAL_TWO_NUISANCE",
+    "PERMISSIVE_MASK",
+    "TwoNuisanceAdjustedLCM",
+    "TwoNuisanceCausalSCM",
+    "TwoNuisanceCounterfactualSCM",
+    "counterfactual_view",
+]

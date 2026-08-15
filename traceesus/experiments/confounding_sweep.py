@@ -40,7 +40,7 @@ attributable to the constraint alone.
 
 Nothing in this module touches a proposal-cited artifact.  The default
 dependency level reproduces the locked configuration exactly, the output
-directory is new, and the seed root is salted (+787_270).
+directory and named seed root are separate from locked outputs.
 """
 
 from __future__ import annotations
@@ -52,6 +52,7 @@ import pandas as pd
 
 from traceesus.core.metrics import evaluate_binary_posterior
 from traceesus.core.runner import ordered_map, spawned_uint64_seeds
+from traceesus.core.seeds import CONFOUNDING_SWEEP_SEED_OFFSET
 from traceesus.experiments.endotype_discovery import kernel
 from traceesus.models import (
     AdjustedLatentClassModel,
@@ -153,7 +154,9 @@ def run_confounding_sweep(
         if renal_effect_sd is None
         else renal_effect_sd
     )
-    root = np.random.SeedSequence(config.master_seed + 787_270)
+    root = np.random.SeedSequence(
+        config.master_seed + CONFOUNDING_SWEEP_SEED_OFFSET
+    )
     tasks = []
     for dependence, child in zip(
         dependence_levels, root.spawn(len(dependence_levels)), strict=True

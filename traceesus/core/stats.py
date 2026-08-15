@@ -8,6 +8,20 @@ import numpy as np
 from scipy.stats import norm, t
 
 
+TARGET_MONTE_CARLO_STANDARD_ERROR = 0.005
+
+
+def required_repeats_for_target_mcse(pilot_variance: float) -> int:
+    """Return repeats needed for the single prespecified Monte Carlo SE target."""
+
+    if not np.isfinite(pilot_variance) or pilot_variance < 0.0:
+        raise ValueError("pilot_variance must be finite and nonnegative.")
+    return max(
+        2,
+        math.ceil(pilot_variance / TARGET_MONTE_CARLO_STANDARD_ERROR**2),
+    )
+
+
 def monte_carlo_summary(values: np.ndarray) -> dict[str, float | int]:
     """Preserve the legacy t-CI and empirical-quantile operation order."""
 

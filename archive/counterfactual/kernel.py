@@ -42,7 +42,7 @@ from traceesus.core.stats import (
 from traceesus.core.runner import nested_seed_sequence_ledger, seed_sequence_ledger
 from traceesus.core.io import write_manifest
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
-from traceesus.models.known_scm import (
+from archive.counterfactual.known_scm import (
     fit_one_diagonal_gaussian as _fit_one_diagonal_gaussian,
     fit_two_diagonal_gaussians as _fit_two_diagonal_gaussians,
     kidney_aware_posterior,

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from traceesus.core.config import ValidatedConfig
+from traceesus.core.seeds import ENDOTYPE_RECOVERY_SEED_ROOT
 
 
 _BIOMARKER_COUNT = 3
@@ -118,7 +119,7 @@ class FittingConfig(ValidatedConfig):
 class ExperimentConfig(ValidatedConfig):
     """Complete reproducible experiment specification."""
 
-    master_seed: int = 20_260_728
+    master_seed: int = ENDOTYPE_RECOVERY_SEED_ROOT
     repeats_per_level: int = 500
     null_repeats: int = 500
     null_renal_effect_sd: float = 1.50
