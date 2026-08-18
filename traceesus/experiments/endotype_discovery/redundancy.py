@@ -38,7 +38,7 @@ from traceesus.core.seeds import (
     REDUNDANCY_SWEEP_SEED_ROOT,
 )
 from traceesus.models import TwoNuisanceCounterfactualSCM
-from traceesus.registry import FULL_LADDER
+from traceesus.registry import full_ladder_for_config
 from traceesus.simulators.two_mechanism import TwoMechanismSimulator
 
 from . import kernel
@@ -76,7 +76,7 @@ class RedundancySweepExperiment(Experiment):
         # fitted by the same EM on the same cohort and paired seed, answered by
         # sufficiency/disablement instead of the posterior.  Any difference
         # between rows three and four is attributable to the query alone.
-        self.models = FULL_LADDER.fitted_models
+        self.models = full_ladder_for_config(config).fitted_models
         self.artifacts: RedundancySweepArtifacts | None = None
 
     def configure(self) -> kernel.ExperimentConfig:
@@ -205,7 +205,9 @@ class RedundancySweepExperiment(Experiment):
 
         config = self.config
         fixed_renal = config.null_renal_effect_sd
-        model = TwoNuisanceCounterfactualSCM()
+        model = TwoNuisanceCounterfactualSCM(
+            biology_path_mask=config.simulation.biology_path_mask
+        )
         rows: list[dict[str, object]] = []
         for level_index, hf_level in enumerate(
             config.simulation.heart_failure_effect_levels_sd

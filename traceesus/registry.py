@@ -6,11 +6,14 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from configs.arcadia_calibrated import CONFIG as ARCADIA_CONFIG
 from configs.endotype_discovery import CONFIG as ENDOTYPE_CONFIG
+from configs.endotype_discovery import ExperimentConfig as DiscoveryExperimentConfig
 from configs.transportability import CONFIG as TRANSPORT_CONFIG
 from traceesus.core.config import ValidatedConfig
 from traceesus.core.model import Model
 from traceesus.core.seeds import (
+    ARCADIA_CALIBRATED_SEED_ROOT,
     CONFOUNDING_SWEEP_SEED_ROOT,
     ENDOTYPE_RECOVERY_SEED_ROOT,
     HF_GRID_SEED_ROOT,
@@ -60,18 +63,26 @@ LOCKED_MODEL_SET = EndotypeModelSet(
     True,
 )
 
-FULL_LADDER = EndotypeModelSet(
-    (
-        AssociativeLatentClassModel(),
-        AdjustedLatentClassModel(),
-        TwoNuisanceAdjustedLCM(),
-        TwoNuisanceCausalSCM(),
-        TwoNuisanceCounterfactualSCM(),
-    ),
-    (12, 14, 18, 14, 14),
-    TwoNuisanceCausalSCM.name,
-    False,
-)
+def full_ladder_for_config(config: DiscoveryExperimentConfig) -> EndotypeModelSet:
+    """Build R1-R6 using the biology mask declared by the simulation config."""
+
+    mask = config.simulation.biology_path_mask
+    causal_parameter_count = 12 + sum(sum(row) for row in mask)
+    return EndotypeModelSet(
+        (
+            AssociativeLatentClassModel(),
+            AdjustedLatentClassModel(),
+            TwoNuisanceAdjustedLCM(),
+            TwoNuisanceCausalSCM(biology_path_mask=mask),
+            TwoNuisanceCounterfactualSCM(biology_path_mask=mask),
+        ),
+        (12, 14, 18, causal_parameter_count, causal_parameter_count),
+        TwoNuisanceCausalSCM.name,
+        False,
+    )
+
+
+FULL_LADDER = full_ladder_for_config(ENDOTYPE_CONFIG)
 
 MODEL_LADDER = tuple(zip(("R1", "R2", "R3", "R4", "R5", "R6"), FULL_LADDER.names))
 
@@ -149,6 +160,15 @@ EXPERIMENT_DESIGNS = (
         "Pooled-class identity drift under renal distortion.",
     ),
     ExperimentDesign(
+        "arcadia_calibrated_discovery", ARCADIA_CONFIG,
+        ARCADIA_CONFIG.simulation.training_patients,
+        ARCADIA_CONFIG.simulation.test_patients,
+        ARCADIA_CONFIG.repeats_per_level,
+        ARCADIA_CALIBRATED_SEED_ROOT, "held-out", "exploratory",
+        "outputs_arcadia_calibrated",
+        "Discovery ladder at ARCADIA-measured renal and heart-failure nuisance.",
+    ),
+    ExperimentDesign(
         "confounding_sweep", ENDOTYPE_CONFIG,
         ENDOTYPE_CONFIG.simulation.training_patients,
         ENDOTYPE_CONFIG.simulation.test_patients,
@@ -191,4 +211,5 @@ __all__ = (
     "LOCKED_MODEL_SET",
     "MODEL_LADDER",
     "design_table",
+    "full_ladder_for_config",
 )

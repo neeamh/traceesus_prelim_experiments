@@ -116,8 +116,9 @@ def _discovery_mean(
 ) -> np.ndarray:
     """Build the discovery biomarker mean before its normal draw."""
 
-    renal_effect = np.zeros(3, dtype=float)
-    renal_effect[_NT_PROBNP] = renal_effect_sd
+    renal_effect = renal_effect_sd * np.asarray(
+        getattr(config, "renal_path_effects_sd", (1.0, 0.0, 0.0)), dtype=float
+    )
     effects = _class_effects(
         config.atrial_path_effects_sd,
         config.competing_path_effects_sd,
@@ -223,11 +224,18 @@ class TwoMechanismSimulator(Simulator):
         return _standard_result(biomarkers, renal, zeros, zeros)
 
     def _heart_failure_effect(self) -> np.ndarray:
-        """Return the deterministic PTFV1-only effect vector."""
+        """Return the configured heart-failure loading, scaled by its strength.
 
-        effect = np.zeros(3, dtype=float)
-        effect[_PTFV1] = self.heart_failure_effect_sd
-        return effect
+        The default loading is PTFV1-only, which reproduces the locked cohorts
+        exactly.  An ARCADIA-calibrated configuration supplies a multi-marker
+        vector so that renal and heart failure contaminate overlapping markers.
+        """
+
+        loading = np.asarray(
+            getattr(self.config, "heart_failure_path_effects_sd", (0.0, 1.0, 0.0)),
+            dtype=float,
+        )
+        return self.heart_failure_effect_sd * loading
 
     def _transport_result(
         self,

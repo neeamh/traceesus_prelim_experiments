@@ -294,22 +294,28 @@ class TwoNuisanceAdjustedLCM(Model):
 
 @dataclass(frozen=True)
 class TwoNuisanceCausalSCM(Model):
-    """Biology mask (renal -> NT-proBNP, HF -> PTFV1), posterior query."""
+    """Config-supplied biology mask with a posterior query."""
 
+    biology_path_mask: tuple[
+        tuple[bool, bool, bool], tuple[bool, bool, bool]
+    ] = BIOLOGY_MASK
     name: str = CAUSAL_TWO_NUISANCE
 
     def fit(self, data: Cohort, rng: Generator, config) -> _FittedTwoNuisance:
-        return _fit(data, rng, config, BIOLOGY_MASK, "posterior")
+        return _fit(data, rng, config, self.biology_path_mask, "posterior")
 
 
 @dataclass(frozen=True)
 class TwoNuisanceCounterfactualSCM(Model):
     """Identical fit to the causal row, answered by sufficiency/disablement."""
 
+    biology_path_mask: tuple[
+        tuple[bool, bool, bool], tuple[bool, bool, bool]
+    ] = BIOLOGY_MASK
     name: str = COUNTERFACTUAL_TWO_NUISANCE
 
     def fit(self, data: Cohort, rng: Generator, config) -> _FittedTwoNuisance:
-        return _fit(data, rng, config, BIOLOGY_MASK, "counterfactual")
+        return _fit(data, rng, config, self.biology_path_mask, "counterfactual")
 
 
 def counterfactual_view(fitted: FittedModel) -> _FittedTwoNuisance:
