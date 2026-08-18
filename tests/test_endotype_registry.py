@@ -10,11 +10,22 @@ import pandas as pd
 from numpy.random import Generator
 
 from configs.endotype_discovery import CONFIG
+from configs.arcadia_calibrated import CONFIG as ARCADIA_CONFIG
 from traceesus.core.model import FittedModel, Model
 from traceesus.core.simulator import Cohort
 from traceesus.experiments.endotype_discovery.recovery import run_model_registry
 from traceesus.models.oracle import DataGeneratingOracle
-from traceesus.registry import FULL_LADDER, LOCKED_MODEL_SET, MODEL_LADDER
+from traceesus.models.multi_nuisance import (
+    BIOLOGY_MASK,
+    TwoNuisanceCausalSCM,
+    TwoNuisanceCounterfactualSCM,
+)
+from traceesus.registry import (
+    FULL_LADDER,
+    LOCKED_MODEL_SET,
+    MODEL_LADDER,
+    full_ladder_for_config,
+)
 
 
 class _FittedMinimalModel(FittedModel):
@@ -98,6 +109,28 @@ def test_model_sets_are_ordered_and_keep_legacy_causal_distinct() -> None:
     assert LOCKED_MODEL_SET.names[:2] == FULL_LADDER.names[:2]
     assert LOCKED_MODEL_SET.names[-1] == FULL_LADDER.names[-1]
     assert LOCKED_MODEL_SET.names[2] not in FULL_LADDER.names
+
+
+def test_biology_mask_is_config_driven_without_moving_locked_defaults() -> None:
+    """Use the historical mask by default and the ARCADIA override only there."""
+
+    assert CONFIG.simulation.biology_path_mask == BIOLOGY_MASK
+    locked = full_ladder_for_config(CONFIG)
+    arcadia = full_ladder_for_config(ARCADIA_CONFIG)
+    locked_r4, locked_r5 = locked.fitted_models[3:5]
+    arcadia_r4, arcadia_r5 = arcadia.fitted_models[3:5]
+    assert isinstance(locked_r4, TwoNuisanceCausalSCM)
+    assert isinstance(locked_r5, TwoNuisanceCounterfactualSCM)
+    assert locked_r4.biology_path_mask == BIOLOGY_MASK
+    assert locked_r5.biology_path_mask == BIOLOGY_MASK
+    assert arcadia_r4.biology_path_mask == ARCADIA_CONFIG.simulation.biology_path_mask
+    assert arcadia_r5.biology_path_mask == ARCADIA_CONFIG.simulation.biology_path_mask
+    assert arcadia_r4.biology_path_mask == (
+        (True, False, False),
+        (True, True, False),
+    )
+    assert locked.parameter_counts[3:5] == (14, 14)
+    assert arcadia.parameter_counts[3:5] == (15, 15)
 
 
 def test_spawning_appended_children_preserves_existing_streams() -> None:

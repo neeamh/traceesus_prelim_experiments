@@ -1,0 +1,98 @@
+{
+  "status": "confirmatory",
+  "repeats_per_level": 500,
+  "seed_root": 21088160,
+  "workers": 4,
+  "model_ladder": [
+    [
+      "R1",
+      "Associative latent class model"
+    ],
+    [
+      "R2",
+      "Renal-adjusted associative latent class model"
+    ],
+    [
+      "R3",
+      "Two-nuisance adjusted associative latent model"
+    ],
+    [
+      "R4",
+      "Two-path biologically constrained latent SCM"
+    ],
+    [
+      "R5",
+      "Two-path latent SCM (counterfactual query)"
+    ],
+    [
+      "R6",
+      "Data-generating oracle (reference)"
+    ]
+  ],
+  "r4_reference": "Two-path biologically constrained latent SCM",
+  "simulation_config": {
+    "training_patients": 800,
+    "test_patients": 1015,
+    "renal_dysfunction_prevalence": 0.199,
+    "atrial_probability_if_renal_normal": 0.5,
+    "atrial_probability_if_renal_impaired": 0.5,
+    "atrial_path_effects_sd": [
+      1.25,
+      1.0,
+      0.0
+    ],
+    "competing_path_effects_sd": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "biomarker_noise_sd": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "renal_effect_levels_sd": [
+      0.0,
+      0.3,
+      0.59,
+      0.9
+    ],
+    "renal_effect_labels": [
+      "None",
+      "Half ARCADIA",
+      "ARCADIA observed",
+      "Above ARCADIA"
+    ],
+    "heart_failure_prevalence": 0.07,
+    "heart_failure_effect_levels_sd": [
+      0.0,
+      0.32,
+      0.65,
+      1.0
+    ],
+    "heart_failure_path_effects_sd": [
+      1.102,
+      -0.254,
+      0.0
+    ],
+    "renal_path_effects_sd": [
+      1.0,
+      -0.095,
+      0.0
+    ],
+    "biology_path_mask": [
+      [
+        true,
+        false,
+        false
+      ],
+      [
+        true,
+        true,
+        false
+      ]
+    ]
+  },
+  "left_atrial_size_channel": "not represented",
+  "renal_ptfv1_mask_approximation": "The measured -0.095 renal loading on PTFV1 is treated as near-noise."
+}

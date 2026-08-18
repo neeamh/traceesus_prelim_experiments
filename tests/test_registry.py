@@ -25,7 +25,7 @@ def test_seed_roots_are_named_and_unique() -> None:
         for name, value in vars(seeds).items()
         if name.endswith("_SEED_ROOT")
     )
-    assert len(roots) == 10
+    assert len(roots) == 11
     assert len(roots) == len(set(roots))
 
 

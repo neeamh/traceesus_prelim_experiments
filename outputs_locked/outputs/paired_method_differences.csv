@@ -1,9 +1,0 @@
-strength_index,renal_effect_sd,metric,contrast,n_repeats,mean_difference,ci_low,ci_high
-0,0.0,false_atrial_confounded_competing,kidney_blind_minus_counterfactual,500,0.03731349051687957,0.03606667965359651,0.038560301380162636
-0,0.0,true_mechanism_accuracy,counterfactual_minus_kidney_blind,500,0.0012599999999999985,0.0008348985301632826,0.0016851014698367145
-1,0.75,false_atrial_confounded_competing,kidney_blind_minus_counterfactual,500,0.1991416923772648,0.19642509769090472,0.2018582870636249
-1,0.75,true_mechanism_accuracy,counterfactual_minus_kidney_blind,500,0.016535999999999974,0.015799264125498983,0.017272735874500966
-2,1.5,false_atrial_confounded_competing,kidney_blind_minus_counterfactual,500,0.39603788487174224,0.39275637622423243,0.39931939351925205
-2,1.5,true_mechanism_accuracy,counterfactual_minus_kidney_blind,500,0.04451999999999998,0.043662621123707855,0.04537737887629211
-3,2.25,false_atrial_confounded_competing,kidney_blind_minus_counterfactual,500,0.589640304432543,0.5863083438547068,0.5929722650103793
-3,2.25,true_mechanism_accuracy,counterfactual_minus_kidney_blind,500,0.07603800000000001,0.07494744721089186,0.07712855278910816

@@ -1,0 +1,273 @@
+heart_failure_effect_sd,comparator,metric,difference_definition,repeat_count,mean_difference,ci95_low,ci95_high
+0.0,Associative latent class model,accuracy,causal SCM minus comparator,500,0.01334975369458128,0.012161672032779383,0.014537835356383177
+0.0,Associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.03312598208641802,0.030209462988573715,0.03604250118426232
+0.0,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.22192862204722127,-0.23054058734541383,-0.21331665674902872
+0.0,Associative latent class model,brier_score,causal SCM minus comparator,500,-0.009163014891539914,-0.009852653560954893,-0.008473376222124934
+0.0,Associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.0081331720328175,-0.009630794500077637,-0.006635549565557362
+0.0,Associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.004494587547898558,0.0017537600923582348,0.0072354150034388805
+0.0,Associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.03454777844561298,0.023901368369571505,0.04519418852165445
+0.0,Associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.044069977827881274,0.039742193670639435,0.04839776198512311
+0.0,Associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.005975447299593086,0.004863533542169035,0.007087361057017136
+0.0,Associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,0.03613541796233086,0.030883620019560663,0.04138721590510105
+0.0,Associative latent class model,false_atrial__redundant,causal SCM minus comparator,500,-0.21327630147630147,-0.2295829107112894,-0.19696969224131355
+0.0,Associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.222499843864938,-0.23124526943456436,-0.21375441829531167
+0.0,Associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.03758375203161125,0.03516916588635495,0.03999833817686756
+0.0,Associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,-0.0017405974274519816,-0.003063084225905016,-0.0004181106289989475
+0.0,Associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.016624787100133032,0.011150515356154321,0.022099058844111744
+0.0,Associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.016349085735442314,0.013995728176290072,0.018702443294594556
+0.0,Associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,-0.0008919171989951742,-0.0017803892655269596,-3.4451324633885975e-06
+0.0,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,500,0.0025852216748768475,0.001948765414553904,0.003221677935199791
+0.0,Renal-adjusted associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.0065014816876364885,0.004900561245398729,0.008102402129874248
+0.0,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.02802624680324912,-0.03615424845294868,-0.019898245153549564
+0.0,Renal-adjusted associative latent class model,brier_score,causal SCM minus comparator,500,-0.0016193341830704898,-0.0019681194676390893,-0.0012705488985018903
+0.0,Renal-adjusted associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.0009201607518697692,-0.0017855019513422585,-5.4819552397279724e-05
+0.0,Renal-adjusted associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,-0.003138129419018411,-0.005229060241054861,-0.0010471985969819613
+0.0,Renal-adjusted associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.005784935887136163,-0.0007275952119727772,0.012297466986245103
+0.0,Renal-adjusted associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.009906344554276242,0.007302055100034555,0.012510634008517929
+0.0,Renal-adjusted associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.0010968104482809425,0.000568099381294108,0.0016255215152677768
+0.0,Renal-adjusted associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,0.005446315987701238,0.0008574151165136176,0.010035216858888859
+0.0,Renal-adjusted associative latent class model,false_atrial__redundant,causal SCM minus comparator,500,-0.034289690864690865,-0.04571758411197485,-0.02286179761740688
+0.0,Renal-adjusted associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.027449816391320558,-0.03560908520443681,-0.019290547578204302
+0.0,Renal-adjusted associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.0029877281468454675,0.001123762934257299,0.004851693359433636
+0.0,Renal-adjusted associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.000685211831422303,4.8689036796425045e-06,0.0013655547591649635
+0.0,Renal-adjusted associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.006020789062487701,0.0031326788730336027,0.008908899251941799
+0.0,Renal-adjusted associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.005942907943000973,0.004611457476339828,0.007274358409662118
+0.0,Renal-adjusted associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.0013206399060674801,0.0010055816325600809,0.0016356981795748794
+0.0,Two-nuisance adjusted associative latent model,accuracy,causal SCM minus comparator,500,0.002711330049261087,0.002066505860992633,0.0033561542375295413
+0.0,Two-nuisance adjusted associative latent model,adjusted_rand_index,causal SCM minus comparator,500,0.006831355136429836,0.0052073429442329525,0.00845536732862672
+0.0,Two-nuisance adjusted associative latent model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.030005160159845154,-0.03825755537371994,-0.021752764945970365
+0.0,Two-nuisance adjusted associative latent model,brier_score,causal SCM minus comparator,500,-0.0018233059042930065,-0.002177027823150716,-0.0014695839854352967
+0.0,Two-nuisance adjusted associative latent model,expected_calibration_error,causal SCM minus comparator,500,-0.0007504889220168329,-0.0016002156409937684,9.923779696010269e-05
+0.0,Two-nuisance adjusted associative latent model,accuracy__heart_failure_only,causal SCM minus comparator,500,-0.0004279241200611197,-0.002557876628124149,0.00170202838800191
+0.0,Two-nuisance adjusted associative latent model,accuracy__redundant,causal SCM minus comparator,500,0.009610324899617467,0.0029029148408719705,0.016317734958362966
+0.0,Two-nuisance adjusted associative latent model,accuracy__renal_only,causal SCM minus comparator,500,0.010167031087552732,0.0075263910637625876,0.012807671111342877
+0.0,Two-nuisance adjusted associative latent model,accuracy__uncomplicated,causal SCM minus comparator,500,0.0009578807623229917,0.0004049567017015514,0.001510804822944432
+0.0,Two-nuisance adjusted associative latent model,false_atrial__heart_failure_only,causal SCM minus comparator,500,0.006197152972348619,0.0017067926283179293,0.010687513316379309
+0.0,Two-nuisance adjusted associative latent model,false_atrial__redundant,causal SCM minus comparator,500,-0.03670647408147409,-0.04923078317809669,-0.024182164984851484
+0.0,Two-nuisance adjusted associative latent model,false_atrial__renal_only,causal SCM minus comparator,500,-0.029382173874502704,-0.03766641099615282,-0.02109793675285259
+0.0,Two-nuisance adjusted associative latent model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.0030635169815326976,0.0011469239047178289,0.004980110058347567
+0.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.002035112783431736,0.0013478120580585865,0.0027224135088048857
+0.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.007358535208810513,0.004600872052038579,0.010116198365582448
+0.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.006173093902530841,0.004855916469102489,0.007490271335959193
+0.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.0016669370161041933,0.0013502880860499962,0.0019835859461583907
+0.0,Two-path latent SCM (counterfactual query),accuracy,causal SCM minus comparator,500,-0.002557635467980293,-0.0030394540917120226,-0.0020758168442485633
+0.0,Two-path latent SCM (counterfactual query),adjusted_rand_index,causal SCM minus comparator,500,-0.006522245813856893,-0.007750285369834767,-0.005294206257879019
+0.0,Two-path latent SCM (counterfactual query),false_atrial_renal_competing,causal SCM minus comparator,500,-0.004183093256461427,-0.00719561019113793,-0.0011705763217849247
+0.0,Two-path latent SCM (counterfactual query),brier_score,causal SCM minus comparator,500,-0.0204180428593599,-0.020837628886718678,-0.019998456832001122
+0.0,Two-path latent SCM (counterfactual query),expected_calibration_error,causal SCM minus comparator,500,-0.07718354695059147,-0.07881597388841657,-0.07555112001276637
+0.0,Two-path latent SCM (counterfactual query),accuracy__heart_failure_only,causal SCM minus comparator,500,-0.0027391704917967925,-0.004279499220042358,-0.0011988417635512274
+0.0,Two-path latent SCM (counterfactual query),accuracy__redundant,causal SCM minus comparator,500,-0.003710132766011638,-0.007881893843251464,0.000461628311228189
+0.0,Two-path latent SCM (counterfactual query),accuracy__renal_only,causal SCM minus comparator,500,-0.004019718473960806,-0.005222830967635519,-0.0028166059802860926
+0.0,Two-path latent SCM (counterfactual query),accuracy__uncomplicated,causal SCM minus comparator,500,-0.002177544850336629,-0.0027071452080370275,-0.0016479444926362301
+0.0,Two-path latent SCM (counterfactual query),false_atrial__heart_failure_only,causal SCM minus comparator,500,0.004839289520980748,0.0020077791252313877,0.007670799916730109
+0.0,Two-path latent SCM (counterfactual query),false_atrial__redundant,causal SCM minus comparator,500,-0.008239529914529914,-0.01524004024095275,-0.0012390195881070787
+0.0,Two-path latent SCM (counterfactual query),false_atrial__renal_only,causal SCM minus comparator,500,-0.004047052220315265,-0.007106783802350324,-0.0009873206382802055
+0.0,Two-path latent SCM (counterfactual query),false_atrial__uncomplicated,causal SCM minus comparator,500,0.00389983967219068,0.0019033173525868793,0.005896361991794481
+0.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.24381384157187755,0.24066650369309447,0.24696117945066062
+0.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.24281624896038526,0.23773615446676397,0.24789634345400655
+0.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.2433212748331103,0.24081783300813792,0.2458247166580827
+0.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.2448175863704757,0.24262122492791516,0.24701394781303626
+0.32,Associative latent class model,accuracy,causal SCM minus comparator,500,0.01280591133004926,0.011649841084799684,0.013961981575298836
+0.32,Associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.03169899914200143,0.02886636153130805,0.034531636752694814
+0.32,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.22302055419159353,-0.23142792500071502,-0.21461318338247204
+0.32,Associative latent class model,brier_score,causal SCM minus comparator,500,-0.008921879952984588,-0.00963221601107356,-0.008211543894895616
+0.32,Associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.006196936704051925,-0.007782578519009011,-0.00461129488909484
+0.32,Associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.0005435186261303558,-0.0021814586194886594,0.0032684958717493708
+0.32,Associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.08653926316097268,0.07427918668483985,0.09879933963710552
+0.32,Associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.04196059028364958,0.037888329814821806,0.04603285075247736
+0.32,Associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.00514319051789834,0.003936755124285132,0.006349625911511549
+0.32,Associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,-0.010993773074428155,-0.016236791489676054,-0.005750754659180257
+0.32,Associative latent class model,false_atrial__redundant,causal SCM minus comparator,499,-0.3174832857962275,-0.33641339224777567,-0.2985531793446793
+0.32,Associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.2159146133479128,-0.22422440235215935,-0.20760482434366623
+0.32,Associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.041146140985553685,0.038550512452008884,0.043741769519098486
+0.32,Associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,-0.00479658907652003,-0.0058854424813402,-0.003707735671699861
+0.32,Associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.03300541459224517,0.026651047285527984,0.03935978189896236
+0.32,Associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.01572862417538493,0.013296759860165935,0.01816048849060392
+0.32,Associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,-0.0025794208098202823,-0.0035122933875313877,-0.0016465482321091768
+0.32,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,500,0.002961576354679801,0.0022026674142674642,0.003720485295092138
+0.32,Renal-adjusted associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.007342212953933278,0.005454122702374329,0.009230303205492226
+0.32,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.033818104855478766,-0.04321226156215917,-0.024423948148798363
+0.32,Renal-adjusted associative latent class model,brier_score,causal SCM minus comparator,500,-0.0021774234790598894,-0.0025987368722206645,-0.0017561100858991142
+0.32,Renal-adjusted associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.0013788359704094777,-0.002241678186052482,-0.0005159937547664732
+0.32,Renal-adjusted associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.00242683629591276,-0.00038104020514142037,0.00523471279696694
+0.32,Renal-adjusted associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.021045785632458805,0.01274422750806232,0.02934734375685529
+0.32,Renal-adjusted associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.011160047592466962,0.0081065331495965,0.014213562035337425
+0.32,Renal-adjusted associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.0006216545936588067,-6.1325201274335835e-06,0.001249441707445047
+0.32,Renal-adjusted associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,-0.044538138150844335,-0.049976421850214205,-0.039099854451474465
+0.32,Renal-adjusted associative latent class model,false_atrial__redundant,causal SCM minus comparator,499,-0.09264440249832086,-0.1075435159075552,-0.07774528908908651
+0.32,Renal-adjusted associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.02960293645874298,-0.03886763933612146,-0.020338233581364506
+0.32,Renal-adjusted associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.006676544231440767,0.0046658187376162515,0.008687269725265283
+0.32,Renal-adjusted associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.0013276867007554394,0.0003976395813613834,0.0022577338201494952
+0.32,Renal-adjusted associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.006846769652841461,0.00346418790938333,0.010229351396299593
+0.32,Renal-adjusted associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.006196018983264448,0.004565279243453428,0.007826758723075469
+0.32,Renal-adjusted associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.0004991881580341591,5.321665737846533e-05,0.000945159658689853
+0.32,Two-nuisance adjusted associative latent model,accuracy,causal SCM minus comparator,500,0.002788177339901476,0.002068373044449841,0.003507981635353111
+0.32,Two-nuisance adjusted associative latent model,adjusted_rand_index,causal SCM minus comparator,500,0.00693856171828359,0.0051489373584601185,0.008728186078107061
+0.32,Two-nuisance adjusted associative latent model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.03378881142332938,-0.04299949785332461,-0.02457812499333415
+0.32,Two-nuisance adjusted associative latent model,brier_score,causal SCM minus comparator,500,-0.00210374007380004,-0.0025132030851747673,-0.0016942770624253129
+0.32,Two-nuisance adjusted associative latent model,expected_calibration_error,causal SCM minus comparator,500,-0.001181588602307003,-0.0020352770274296083,-0.00032790017718439747
+0.32,Two-nuisance adjusted associative latent model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.0004940277050506654,-0.0014987872531272083,0.0024868426632285393
+0.32,Two-nuisance adjusted associative latent model,accuracy__redundant,causal SCM minus comparator,500,0.019314202309558347,0.011815704182785304,0.02681270043633139
+0.32,Two-nuisance adjusted associative latent model,accuracy__renal_only,causal SCM minus comparator,500,0.010355190906184124,0.00739413846614802,0.013316243346220228
+0.32,Two-nuisance adjusted associative latent model,accuracy__uncomplicated,causal SCM minus comparator,500,0.0007584286425088309,0.00015933321761923004,0.0013575240673984316
+0.32,Two-nuisance adjusted associative latent model,false_atrial__heart_failure_only,causal SCM minus comparator,500,0.002946851262572234,-0.0012087373099526765,0.0071024398350971445
+0.32,Two-nuisance adjusted associative latent model,false_atrial__redundant,causal SCM minus comparator,499,-0.04322821101246372,-0.056888195679217594,-0.029568226345709846
+0.32,Two-nuisance adjusted associative latent model,false_atrial__renal_only,causal SCM minus comparator,500,-0.03336835739371973,-0.042544947567651474,-0.02419176721978799
+0.32,Two-nuisance adjusted associative latent model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.002761811041459801,0.0007431038528933802,0.004780518230026222
+0.32,Two-nuisance adjusted associative latent model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.0023686360342345426,0.001699266764786757,0.0030380053036823283
+0.32,Two-nuisance adjusted associative latent model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.008884428614218906,0.006018622812278836,0.011750234416158977
+0.32,Two-nuisance adjusted associative latent model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.007314161655659223,0.0057275494525523525,0.008900773858766092
+0.32,Two-nuisance adjusted associative latent model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.0018679927842198847,0.0014745868540243436,0.002261398714415426
+0.32,Two-path latent SCM (counterfactual query),accuracy,causal SCM minus comparator,500,-0.003521182266009852,-0.0040941223908250715,-0.0029482421411946326
+0.32,Two-path latent SCM (counterfactual query),adjusted_rand_index,causal SCM minus comparator,500,-0.008951270795417764,-0.010398719363803752,-0.007503822227031776
+0.32,Two-path latent SCM (counterfactual query),false_atrial_renal_competing,causal SCM minus comparator,500,-0.0032618785603019526,-0.006168264784652627,-0.0003554923359512783
+0.32,Two-path latent SCM (counterfactual query),brier_score,causal SCM minus comparator,500,-0.020008501722659205,-0.02048219655920691,-0.0195348068861115
+0.32,Two-path latent SCM (counterfactual query),expected_calibration_error,causal SCM minus comparator,500,-0.07624467853392686,-0.07806092453227872,-0.07442843253557499
+0.32,Two-path latent SCM (counterfactual query),accuracy__heart_failure_only,causal SCM minus comparator,500,-0.003826070831437412,-0.0054232235364141245,-0.0022289181264606994
+0.32,Two-path latent SCM (counterfactual query),accuracy__redundant,causal SCM minus comparator,500,-0.005139258750851159,-0.009602140039717108,-0.0006763774619852093
+0.32,Two-path latent SCM (counterfactual query),accuracy__renal_only,causal SCM minus comparator,500,-0.005487424447477253,-0.006755766061646547,-0.004219082833307958
+0.32,Two-path latent SCM (counterfactual query),accuracy__uncomplicated,causal SCM minus comparator,500,-0.002965541831565784,-0.0035383103510738876,-0.0023927733120576804
+0.32,Two-path latent SCM (counterfactual query),false_atrial__heart_failure_only,causal SCM minus comparator,500,0.007083673753352329,0.003939170261958237,0.01022817724474642
+0.32,Two-path latent SCM (counterfactual query),false_atrial__redundant,causal SCM minus comparator,499,-0.006093564816273392,-0.011922299196507715,-0.0002648304360390683
+0.32,Two-path latent SCM (counterfactual query),false_atrial__renal_only,causal SCM minus comparator,500,-0.0031111053034334813,-0.005996322146164436,-0.00022588846070252695
+0.32,Two-path latent SCM (counterfactual query),false_atrial__uncomplicated,causal SCM minus comparator,500,0.0055177272025217885,0.0034372893762298065,0.00759816502881377
+0.32,Two-path latent SCM (counterfactual query),mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.24443978459529817,0.24146336189295617,0.24741620729764016
+0.32,Two-path latent SCM (counterfactual query),mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.24814378170870202,0.24272993924601527,0.2535576241713888
+0.32,Two-path latent SCM (counterfactual query),mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.24340664790693853,0.24093569836804812,0.24587759744582893
+0.32,Two-path latent SCM (counterfactual query),mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.24403270187910778,0.24181936896362163,0.24624603479459392
+0.65,Associative latent class model,accuracy,causal SCM minus comparator,500,0.014638423645320194,0.01339413810727732,0.01588270918336307
+0.65,Associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.03624097340716911,0.03320491436630121,0.03927703244803701
+0.65,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.2276478308883832,-0.2361629694299262,-0.21913269234684019
+0.65,Associative latent class model,brier_score,causal SCM minus comparator,500,-0.010079030980634078,-0.010827128287745767,-0.00933093367352239
+0.65,Associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.006392445164254589,-0.008088363928659754,-0.004696526399849424
+0.65,Associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.0060196986398647085,0.0025196857978260307,0.009519711481903385
+0.65,Associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.09655319730605166,0.08335942130138732,0.109746973310716
+0.65,Associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.04048616971224102,0.036399622054360356,0.04457271737012168
+0.65,Associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.007401656019543274,0.0060293965133286186,0.008773915525757929
+0.65,Associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,-0.06952569564559971,-0.0762593423596318,-0.06279204893156762
+0.65,Associative latent class model,false_atrial__redundant,causal SCM minus comparator,499,-0.3764674036718125,-0.3960581352526713,-0.35687667209095364
+0.65,Associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.21683865744447214,-0.22527946141401314,-0.20839785347493114
+0.65,Associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.04427108900738109,0.04155997024024613,0.04698220777451605
+0.65,Associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,-0.0037963163429112086,-0.0052910493555782265,-0.0023015833302441908
+0.65,Associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.05332307295310275,0.04497646440267263,0.061669681503532865
+0.65,Associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.011117022979277004,0.008684954532351652,0.013549091426202356
+0.65,Associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,-0.005053600730503145,-0.006020393631493344,-0.004086807829512946
+0.65,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,500,0.003745812807881772,0.002926330301164458,0.004565295314599086
+0.65,Renal-adjusted associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.009320665541608044,0.007288348255122812,0.011352982828093276
+0.65,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.038205974961178134,-0.04785600680217236,-0.028555943120183905
+0.65,Renal-adjusted associative latent class model,brier_score,causal SCM minus comparator,500,-0.0028939532023892775,-0.0033663096462428427,-0.0024215967585357124
+0.65,Renal-adjusted associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.0007563161616543297,-0.001797431899383513,0.0002847995760748536
+0.65,Renal-adjusted associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.009325358321446903,0.005459835091224398,0.013190881551669406
+0.65,Renal-adjusted associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.029890591551999548,0.020193227768017512,0.039587955335981584
+0.65,Renal-adjusted associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.01266931767427258,0.00955848294281346,0.0157801524057317
+0.65,Renal-adjusted associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.000695610628996248,3.3279660135283125e-05,0.001357941597857213
+0.65,Renal-adjusted associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,-0.09522537863995786,-0.1020441776167238,-0.08840657966319193
+0.65,Renal-adjusted associative latent class model,false_atrial__redundant,causal SCM minus comparator,499,-0.1405758236419559,-0.15768095081505257,-0.12347069646885922
+0.65,Renal-adjusted associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.030950932417828928,-0.04053023188636869,-0.02137163294928917
+0.65,Renal-adjusted associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.013352327105629138,0.011184377094929173,0.015520277116329103
+0.65,Renal-adjusted associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.0023589510071792296,0.0009244339463887366,0.0037934680679697227
+0.65,Renal-adjusted associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.011070511452091697,0.006268967212443189,0.015872055691740206
+0.65,Renal-adjusted associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.0028559054454097197,0.001088250818899052,0.004623560071920388
+0.65,Renal-adjusted associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,-0.003242137939236492,-0.0037507148992689046,-0.0027335609792040793
+0.65,Two-nuisance adjusted associative latent model,accuracy,causal SCM minus comparator,500,0.002624630541871917,0.0018825040885773318,0.003366756995166502
+0.65,Two-nuisance adjusted associative latent model,adjusted_rand_index,causal SCM minus comparator,500,0.006523049735559978,0.004671519939637576,0.00837457953148238
+0.65,Two-nuisance adjusted associative latent model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.03593301279819273,-0.04536198646802325,-0.026504039128362203
+0.65,Two-nuisance adjusted associative latent model,brier_score,causal SCM minus comparator,500,-0.0022067275058680717,-0.0026491607931376088,-0.0017642942185985345
+0.65,Two-nuisance adjusted associative latent model,expected_calibration_error,causal SCM minus comparator,500,-0.0008405695501896665,-0.0017756432346528136,9.450413427348049e-05
+0.65,Two-nuisance adjusted associative latent model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.00217816209056332,-5.410409426714023e-05,0.00441042827539378
+0.65,Two-nuisance adjusted associative latent model,accuracy__redundant,causal SCM minus comparator,500,0.01675713074290541,0.008787390070044126,0.024726871415766693
+0.65,Two-nuisance adjusted associative latent model,accuracy__renal_only,causal SCM minus comparator,500,0.01197457607712715,0.008922564822225733,0.015026587332028569
+0.65,Two-nuisance adjusted associative latent model,accuracy__uncomplicated,causal SCM minus comparator,500,0.00014427691523649332,-0.0004289097477967995,0.0007174635782697861
+0.65,Two-nuisance adjusted associative latent model,false_atrial__heart_failure_only,causal SCM minus comparator,500,0.006360329665155236,0.002023961952332654,0.010696697377977817
+0.65,Two-nuisance adjusted associative latent model,false_atrial__redundant,causal SCM minus comparator,499,-0.03370150223857639,-0.04774211256778657,-0.01966089190936621
+0.65,Two-nuisance adjusted associative latent model,false_atrial__renal_only,causal SCM minus comparator,500,-0.036484937514312324,-0.045967500066005834,-0.027002374962618817
+0.65,Two-nuisance adjusted associative latent model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.005546584077459247,0.0034675692736037336,0.00762559888131476
+0.65,Two-nuisance adjusted associative latent model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.002718842149845484,0.00198009771895369,0.003457586580737278
+0.65,Two-nuisance adjusted associative latent model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.008294448594241211,0.005188492722109637,0.011400404466372785
+0.65,Two-nuisance adjusted associative latent model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.007628219167047203,0.005926865225320556,0.009329573108773848
+0.65,Two-nuisance adjusted associative latent model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.002002067549276201,0.0016606522190294312,0.002343482879522971
+0.65,Two-path latent SCM (counterfactual query),accuracy,causal SCM minus comparator,500,-0.003196059113300493,-0.003723668061997498,-0.0026684501646034877
+0.65,Two-path latent SCM (counterfactual query),adjusted_rand_index,causal SCM minus comparator,500,-0.008153523911891097,-0.009500009226474416,-0.0068070385973077775
+0.65,Two-path latent SCM (counterfactual query),false_atrial_renal_competing,causal SCM minus comparator,500,-0.003462816563893496,-0.006435872411719912,-0.0004897607160670799
+0.65,Two-path latent SCM (counterfactual query),brier_score,causal SCM minus comparator,500,-0.020225683265703977,-0.020664547236045102,-0.019786819295362853
+0.65,Two-path latent SCM (counterfactual query),expected_calibration_error,causal SCM minus comparator,500,-0.07682117529855338,-0.0784909950397741,-0.07515135555733267
+0.65,Two-path latent SCM (counterfactual query),accuracy__heart_failure_only,causal SCM minus comparator,500,-0.0019040802292112973,-0.0034772048345786287,-0.0003309556238439658
+0.65,Two-path latent SCM (counterfactual query),accuracy__redundant,causal SCM minus comparator,500,-0.00485857762292747,-0.009082399005946103,-0.0006347562399088387
+0.65,Two-path latent SCM (counterfactual query),accuracy__renal_only,causal SCM minus comparator,500,-0.005324330180507923,-0.006557828638655727,-0.004090831722360119
+0.65,Two-path latent SCM (counterfactual query),accuracy__uncomplicated,causal SCM minus comparator,500,-0.00270396522104816,-0.0032612961143433537,-0.002146634327752966
+0.65,Two-path latent SCM (counterfactual query),false_atrial__heart_failure_only,causal SCM minus comparator,500,-5.127512239909593e-06,-0.002958224894558548,0.002947969870078729
+0.65,Two-path latent SCM (counterfactual query),false_atrial__redundant,causal SCM minus comparator,499,-0.0007753101941478691,-0.0074083437530951006,0.005857723364799362
+0.65,Two-path latent SCM (counterfactual query),false_atrial__renal_only,causal SCM minus comparator,500,-0.0036515630664078493,-0.006615379252277729,-0.0006877468805379689
+0.65,Two-path latent SCM (counterfactual query),false_atrial__uncomplicated,causal SCM minus comparator,500,0.0027517642321447885,0.0007356111569547983,0.004767917307334779
+0.65,Two-path latent SCM (counterfactual query),mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.24554801477060165,0.24238131079673153,0.24871471874447176
+0.65,Two-path latent SCM (counterfactual query),mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.24447226837384453,0.2395476587206128,0.24939687802707627
+0.65,Two-path latent SCM (counterfactual query),mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.24361848727680782,0.24110378830038912,0.24613318625322653
+0.65,Two-path latent SCM (counterfactual query),mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.24519723870161994,0.2428885534491643,0.24750592395407559
+1.0,Associative latent class model,accuracy,causal SCM minus comparator,500,0.01502857142857143,0.013858916878547848,0.01619822597859501
+1.0,Associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.03718498404188721,0.03433314179578895,0.04003682628798547
+1.0,Associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.21828986621777216,-0.22602691054089843,-0.2105528218946459
+1.0,Associative latent class model,brier_score,causal SCM minus comparator,500,-0.010463319222267458,-0.01113043657957663,-0.009796201864958286
+1.0,Associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.006583389787546528,-0.00822095143230432,-0.004945828142788737
+1.0,Associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.024395666491950456,0.0199742297629529,0.028817103220948014
+1.0,Associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.1279688131900899,0.11413489801571147,0.14180272836446833
+1.0,Associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.0348574704733403,0.031070659672803598,0.038644281273877
+1.0,Associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.0073979153048724005,0.006027240925414597,0.008768589684330204
+1.0,Associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,-0.1336987910310417,-0.14165851736792312,-0.1257390646941603
+1.0,Associative latent class model,false_atrial__redundant,causal SCM minus comparator,500,-0.4450299919035214,-0.46557047146357544,-0.4244895123434673
+1.0,Associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.20147201086866057,-0.20905545260602681,-0.19388856913129432
+1.0,Associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.04863969565190721,0.04595601751772038,0.05132337378609404
+1.0,Associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,-0.00529611098550445,-0.007284355836107919,-0.0033078661349009815
+1.0,Associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.0586384888136918,0.050086322272956924,0.06719065535442667
+1.0,Associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.0021056547956630096,-1.1742163393029924e-05,0.00422305175471905
+1.0,Associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,-0.011818283752197527,-0.012924945555831962,-0.010711621948563092
+1.0,Renal-adjusted associative latent class model,accuracy,causal SCM minus comparator,500,0.00611625615763547,0.005302613176094317,0.006929899139176623
+1.0,Renal-adjusted associative latent class model,adjusted_rand_index,causal SCM minus comparator,500,0.015343351742164299,0.013304094898911299,0.0173826085854173
+1.0,Renal-adjusted associative latent class model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.04270609826171922,-0.05186179757117358,-0.03355039895226486
+1.0,Renal-adjusted associative latent class model,brier_score,causal SCM minus comparator,500,-0.003983830014860142,-0.004468749728854378,-0.003498910300865905
+1.0,Renal-adjusted associative latent class model,expected_calibration_error,causal SCM minus comparator,500,-0.0017654014041994489,-0.0028615275602296483,-0.0006692752481692492
+1.0,Renal-adjusted associative latent class model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.029838585752513157,0.025313679820614155,0.034363491684412155
+1.0,Renal-adjusted associative latent class model,accuracy__redundant,causal SCM minus comparator,500,0.03998582228741651,0.02922303000161,0.05074861457322302
+1.0,Renal-adjusted associative latent class model,accuracy__renal_only,causal SCM minus comparator,500,0.013994955588506918,0.010767786043730954,0.017222125133282883
+1.0,Renal-adjusted associative latent class model,accuracy__uncomplicated,causal SCM minus comparator,500,0.0017904871248324056,0.001044806211040901,0.00253616803862391
+1.0,Renal-adjusted associative latent class model,false_atrial__heart_failure_only,causal SCM minus comparator,500,-0.15277725533680803,-0.1606508760163088,-0.14490363465730724
+1.0,Renal-adjusted associative latent class model,false_atrial__redundant,causal SCM minus comparator,500,-0.19431007717772422,-0.21304229806780134,-0.1755778562876471
+1.0,Renal-adjusted associative latent class model,false_atrial__renal_only,causal SCM minus comparator,500,-0.03142418654000136,-0.04044040404311332,-0.02240796903688941
+1.0,Renal-adjusted associative latent class model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.014042254717625638,0.011776309948905059,0.016308199486346216
+1.0,Renal-adjusted associative latent class model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.002308760520009144,0.00011028643979156278,0.004507234600226725
+1.0,Renal-adjusted associative latent class model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.0064665133998160545,0.0009911370438128592,0.01194188975581925
+1.0,Renal-adjusted associative latent class model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,-0.004305426485726486,-0.005988083044071627,-0.002622769927381345
+1.0,Renal-adjusted associative latent class model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,-0.009753864792233767,-0.010483190609158156,-0.009024538975309379
+1.0,Two-nuisance adjusted associative latent model,accuracy,causal SCM minus comparator,500,0.0023605911330049265,0.001675670579749034,0.003045511686260819
+1.0,Two-nuisance adjusted associative latent model,adjusted_rand_index,causal SCM minus comparator,500,0.005914612693786345,0.004182324284245368,0.007646901103327322
+1.0,Two-nuisance adjusted associative latent model,false_atrial_renal_competing,causal SCM minus comparator,500,-0.03818259000849652,-0.04650842883190181,-0.029856751185091228
+1.0,Two-nuisance adjusted associative latent model,brier_score,causal SCM minus comparator,500,-0.0018276587879370104,-0.0022013978914373214,-0.0014539196844366993
+1.0,Two-nuisance adjusted associative latent model,expected_calibration_error,causal SCM minus comparator,500,-0.0004427266811438403,-0.0013187447146471212,0.0004332913523594407
+1.0,Two-nuisance adjusted associative latent model,accuracy__heart_failure_only,causal SCM minus comparator,500,0.0016980109353709914,-0.0003211646246275065,0.0037171864953694893
+1.0,Two-nuisance adjusted associative latent model,accuracy__redundant,causal SCM minus comparator,500,0.012576334245912923,0.0054565844933231545,0.019696083998502693
+1.0,Two-nuisance adjusted associative latent model,accuracy__renal_only,causal SCM minus comparator,500,0.01051449592151836,0.007653123654639991,0.01337586818839673
+1.0,Two-nuisance adjusted associative latent model,accuracy__uncomplicated,causal SCM minus comparator,500,0.00022341009130484512,-0.00036060055640402104,0.0008074207390137113
+1.0,Two-nuisance adjusted associative latent model,false_atrial__heart_failure_only,causal SCM minus comparator,500,-0.0001829654575585805,-0.004498842187732134,0.004132911272614973
+1.0,Two-nuisance adjusted associative latent model,false_atrial__redundant,causal SCM minus comparator,500,-0.04109661286425992,-0.054533316820009184,-0.02765990890851065
+1.0,Two-nuisance adjusted associative latent model,false_atrial__renal_only,causal SCM minus comparator,500,-0.03805310371515295,-0.046343227296785076,-0.02976298013352082
+1.0,Two-nuisance adjusted associative latent model,false_atrial__uncomplicated,causal SCM minus comparator,500,0.0046801642584611905,0.0027025203582972802,0.0066578081586251
+1.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.002353380931107063,0.0017441819342298244,0.0029625799279843013
+1.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.005440314265469137,0.0024652515041767306,0.008415377026761543
+1.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.0058158495643615095,0.004541326610611231,0.007090372518111788
+1.0,Two-nuisance adjusted associative latent model,mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.0018241782942825515,0.001507072495667687,0.002141284092897416
+1.0,Two-path latent SCM (counterfactual query),accuracy,causal SCM minus comparator,500,-0.0034463054187192097,-0.00391713016973324,-0.002975480667705179
+1.0,Two-path latent SCM (counterfactual query),adjusted_rand_index,causal SCM minus comparator,500,-0.00880152884137157,-0.009996800333470836,-0.0076062573492723055
+1.0,Two-path latent SCM (counterfactual query),false_atrial_renal_competing,causal SCM minus comparator,500,-0.004387239158540444,-0.007382361935077958,-0.0013921163820029303
+1.0,Two-path latent SCM (counterfactual query),brier_score,causal SCM minus comparator,500,-0.02010984551140209,-0.020544550169226357,-0.01967514085357782
+1.0,Two-path latent SCM (counterfactual query),expected_calibration_error,causal SCM minus comparator,500,-0.07647899115674549,-0.07816575994877296,-0.07479222236471801
+1.0,Two-path latent SCM (counterfactual query),accuracy__heart_failure_only,causal SCM minus comparator,500,-0.0030609548452986365,-0.00457775327520621,-0.001544156415391063
+1.0,Two-path latent SCM (counterfactual query),accuracy__redundant,causal SCM minus comparator,500,-0.005739677311159383,-0.009774979959018014,-0.0017043746633007527
+1.0,Two-path latent SCM (counterfactual query),accuracy__renal_only,causal SCM minus comparator,500,-0.004382489266595153,-0.005625481296568216,-0.0031394972366220898
+1.0,Two-path latent SCM (counterfactual query),accuracy__uncomplicated,causal SCM minus comparator,500,-0.003191029497675547,-0.003709727638975037,-0.0026723313563760576
+1.0,Two-path latent SCM (counterfactual query),false_atrial__heart_failure_only,causal SCM minus comparator,500,0.0032118526980248418,0.0002741224226274165,0.006149582973422267
+1.0,Two-path latent SCM (counterfactual query),false_atrial__redundant,causal SCM minus comparator,500,0.0009099270011034719,-0.006385475556051118,0.008205329558258062
+1.0,Two-path latent SCM (counterfactual query),false_atrial__renal_only,causal SCM minus comparator,500,-0.004693307041402668,-0.007736875686937135,-0.001649738395868201
+1.0,Two-path latent SCM (counterfactual query),false_atrial__uncomplicated,causal SCM minus comparator,500,0.0032959739593900078,0.00119846294822231,0.005393484970557706
+1.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__heart_failure_only,causal SCM minus comparator,500,0.24290538788906885,0.2399289132490747,0.245881862529063
+1.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__redundant,causal SCM minus comparator,500,0.2386998508734888,0.23388512561350408,0.24351457613347352
+1.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__renal_only,causal SCM minus comparator,500,0.2413749464025521,0.23888433614954696,0.24386555665555726
+1.0,Two-path latent SCM (counterfactual query),mean_posterior_entropy__uncomplicated,causal SCM minus comparator,500,0.24319397583022698,0.24098216293574837,0.2454057887247056

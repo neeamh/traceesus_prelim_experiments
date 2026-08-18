@@ -1,0 +1,112 @@
+{
+  "experiment": "arcadia_calibrated_discovery_confirmatory",
+  "config": {
+    "master_seed": 21088160,
+    "repeats_per_level": 500,
+    "null_repeats": 500,
+    "null_renal_effect_sd": 0.587,
+    "workers": 4,
+    "simulation": {
+      "training_patients": 800,
+      "test_patients": 1015,
+      "renal_dysfunction_prevalence": 0.199,
+      "atrial_probability_if_renal_normal": 0.5,
+      "atrial_probability_if_renal_impaired": 0.5,
+      "atrial_path_effects_sd": [
+        1.25,
+        1.0,
+        0.0
+      ],
+      "competing_path_effects_sd": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "biomarker_noise_sd": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "renal_effect_levels_sd": [
+        0.0,
+        0.3,
+        0.59,
+        0.9
+      ],
+      "renal_effect_labels": [
+        "None",
+        "Half ARCADIA",
+        "ARCADIA observed",
+        "Above ARCADIA"
+      ],
+      "heart_failure_prevalence": 0.07,
+      "heart_failure_effect_levels_sd": [
+        0.0,
+        0.32,
+        0.65,
+        1.0
+      ],
+      "heart_failure_path_effects_sd": [
+        1.102,
+        -0.254,
+        0.0
+      ],
+      "renal_path_effects_sd": [
+        1.0,
+        -0.095,
+        0.0
+      ],
+      "biology_path_mask": [
+        [
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false
+        ]
+      ]
+    },
+    "fitting": {
+      "random_starts": 4,
+      "maximum_em_iterations": 300,
+      "relative_log_likelihood_tolerance": 1e-06,
+      "variance_floor": 0.0025000000000000005,
+      "probability_floor": 1e-05,
+      "beta_prior_pseudocount": 0.5,
+      "minimum_effective_class_fraction": 0.02,
+      "calibration_bins": 10
+    }
+  },
+  "master_seed": 21088160,
+  "package_version": "0.1.0",
+  "git_commit": "d427ea9db3b9b6215eb54ff2967553435864c735",
+  "git_state": "available",
+  "package_versions": {
+    "python": "3.12.0",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.14.1",
+    "matplotlib": "3.9.2"
+  },
+  "wall_clock_runtime_seconds": 890.3042336670042,
+  "output_file_sha256": {
+    "README_PILOT_FINDINGS.md": "e6b18cde4ba978f7aa9a40a49d56e37caee6446a032e3062dd70b5356496a7aa",
+    "arcadia_confirmatory_metadata.json": "7fb1c74cbee882ad391d6e002c48074f553de435cbcce419006dd9a48166ee88",
+    "arcadia_marker_coverage.csv": "7ce1142e6a5740589216a9ac0674ca9031aa917c0889bed0a46ce1b3ee613ee2",
+    "arcadia_redundancy_sweep_fit_diagnostics.csv": "a61256fe347c4caabb9e2ac22f5be02896be6c25063650d2f1c6d0b1b30e2820",
+    "arcadia_redundancy_sweep_paired_contrasts.csv": "8e969763f4eaac92867196ed7793db2fd96e1838130f0303d30a8155a28aeae3",
+    "arcadia_redundancy_sweep_parameters.csv": "467eeaefdfd9054464158be89defeda1a8a5ffdf38a19a23af19704d538b690b",
+    "arcadia_redundancy_sweep_raw.csv": "4a89d14067c12d296a4c009d61a976a01f510e3f09ffd8dd9ef0e104e21ca7fe",
+    "arcadia_redundancy_sweep_raw_pilot40.csv": "9d182a54bf0cb5467f6107c9a827188df5a5f00b8a9875f9c98ae41475da9d0c",
+    "arcadia_redundancy_sweep_summary.csv": "16e56a06d60b30d277523cf324ddc9cd1ec5996580c43159debd704043b28664",
+    "arcadia_renal_sweep_fit_diagnostics.csv": "71bb92bb01c80b4a1da956d5d49abe635b40873c7fb922b4dc7d072476b9dbe6",
+    "arcadia_renal_sweep_paired_contrasts.csv": "d060a78c67942b295a84fb557ae9fb6a3228a89a9f2dda4ad4e9276955c6bdef",
+    "arcadia_renal_sweep_parameters.csv": "91f2242843f875e656eb8992806995e855ff172b7bd7520fdc4c2c273fbd74dc",
+    "arcadia_renal_sweep_raw.csv": "b6085693795070fa939804855b266ae0ca94fd306e9e48f1c1fad39a1de9e7d4",
+    "arcadia_renal_sweep_raw_pilot40.csv": "ba7007124fddd2d65975eb912f716fdf465f471d6fe12c2b37b57fc5eb1dcc7f",
+    "arcadia_renal_sweep_summary.csv": "25532591b1e1beda9dd8ea634e400f3912d418e3d73e4f80fbaca59477d132b2"
+  }
+}

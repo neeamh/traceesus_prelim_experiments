@@ -1,2 +1,0 @@
-truth_k,comparison,repeats,false_k2_selections,false_k2_rate,wilson_ci_low,wilson_ci_high,k2_convergence_rate,median_bic_k2_minus_k1
-1,BIC-selected K=1 versus K=2 after renal adjustment,500,0,0.0,4.336808689942018e-19,0.007624340461552241,1.0,40.9295860144548

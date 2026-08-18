@@ -37,6 +37,21 @@ class SimulationConfig(ValidatedConfig):
     )
     heart_failure_prevalence: float = 0.07
     heart_failure_effect_levels_sd: tuple[float, ...] = (0.0, 0.5, 1.0, 1.5)
+    # Per-biomarker loading of the heart-failure path, in units of
+    # heart_failure_effect_levels_sd.  The default (0, 1, 0) reproduces the
+    # locked PTFV1-only path exactly, so cited outputs are unaffected.  An
+    # ARCADIA-calibrated configuration overrides this to a multi-marker vector,
+    # which is what creates genuine nuisance redundancy.
+    heart_failure_path_effects_sd: tuple[float, float, float] = (0.0, 1.0, 0.0)
+    # Per-biomarker loading of the renal path, same convention.  The default
+    # (1, 0, 0) reproduces the locked NT-proBNP-only path exactly.
+    renal_path_effects_sd: tuple[float, float, float] = (1.0, 0.0, 0.0)
+    # Rows are (renal, heart failure); columns are the three simulator markers.
+    # This default is the historical biology mask and therefore preserves the
+    # locked R4/R5 fits exactly.
+    biology_path_mask: tuple[
+        tuple[bool, bool, bool], tuple[bool, bool, bool]
+    ] = ((True, False, False), (False, True, False))
 
     def __post_init__(self) -> None:
         """Validate before any simulator can consume an RNG stream."""
@@ -61,9 +76,23 @@ class SimulationConfig(ValidatedConfig):
             ("atrial_path_effects_sd", self.atrial_path_effects_sd),
             ("competing_path_effects_sd", self.competing_path_effects_sd),
             ("biomarker_noise_sd", self.biomarker_noise_sd),
+            ("heart_failure_path_effects_sd", self.heart_failure_path_effects_sd),
+            ("renal_path_effects_sd", self.renal_path_effects_sd),
         ):
             if len(vector) != _BIOMARKER_COUNT:
                 raise ValueError(f"{name} must contain one value per biomarker.")
+        if len(self.biology_path_mask) != 2 or any(
+            len(row) != _BIOMARKER_COUNT for row in self.biology_path_mask
+        ):
+            raise ValueError(
+                "biology_path_mask must contain two nuisance rows and three markers."
+            )
+        if any(
+            not isinstance(value, bool)
+            for row in self.biology_path_mask
+            for value in row
+        ):
+            raise TypeError("biology_path_mask entries must be Boolean.")
         if any(value <= 0.0 for value in self.biomarker_noise_sd):
             raise ValueError("Residual biomarker standard deviations must be positive.")
         if any(value < 0.0 for value in self.renal_effect_levels_sd):

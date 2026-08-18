@@ -1,6 +1,0 @@
-method,difference_definition,repeat_count,mean_difference,ci95_low,ci95_high
-Frozen causal latent SCM,strong-shift minus no-shift accuracy,50,-0.05631999999999996,-0.060108371038352655,-0.052531628961647266
-Modular causal latent SCM,strong-shift minus no-shift accuracy,50,-0.041099999999999956,-0.04421705678676798,-0.03798294321323193
-Pooled associative latent class model,strong-shift minus no-shift accuracy,50,-0.07348000000000003,-0.07859884185456406,-0.068361158145436
-Target oracle (reference),strong-shift minus no-shift accuracy,50,-0.03933999999999995,-0.04196714545199978,-0.03671285454800012
-Target-calibrated associative latent model,strong-shift minus no-shift accuracy,50,-0.042639999999999983,-0.046693762984994606,-0.03858623701500536

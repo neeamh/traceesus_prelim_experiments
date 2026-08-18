@@ -1,4 +1,0 @@
-method,repeat_count,false_k2_selections,false_k2_rate,wilson_ci95_low,wilson_ci95_high,median_delta_bic_k2_minus_k1,k2_convergence_rate
-Associative latent class model,500,500,1.0,0.9923756595384479,1.0,-277.84380939947096,1.0
-Renal-adjusted associative latent class model,500,0,0.0,4.336808689942018e-19,0.007624340461552241,27.674427892323365,1.0
-Biologically constrained latent SCM,500,0,0.0,4.336808689942018e-19,0.007624340461552241,27.29245454183092,1.0
